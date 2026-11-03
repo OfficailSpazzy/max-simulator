@@ -1,5 +1,5 @@
 // Max Simulator offline cache
-const CACHE='max-sim-1.8';
+const CACHE='max-sim-1.9';
 const CORE=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png',
 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js',

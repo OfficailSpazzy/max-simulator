@@ -173,6 +173,67 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
 .item button{grid-column:2;grid-row:1/3;padding:8px 12px;min-width:74px;border-radius:3px;border:1px solid var(--tape);background:transparent;color:var(--tape);font-weight:600;cursor:pointer;font-variant-numeric:tabular-nums}
 .item button:disabled{border-color:var(--line);color:var(--dim);cursor:not-allowed}
 #fired h2{color:var(--danger);font-size:64px}
+/* ---------- phone layout ---------- */
+#mhud{display:none}
+.touch #mhud{display:flex;flex-direction:column;gap:6px;position:absolute;top:calc(env(safe-area-inset-top,0px) + 6px);left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px))}
+.touch .corner.tr,.touch .stats,.touch #bTicket{display:none!important}
+.mbar{display:flex;align-items:center;gap:10px;background:var(--plate);border:1px solid var(--line);border-radius:999px;padding:6px 12px;backdrop-filter:blur(4px)}
+.mleft{display:flex;align-items:baseline;gap:8px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mleft b{font-family:var(--display);font-size:16px;color:var(--tape);letter-spacing:.04em}
+.mleft span{font-size:12px;font-weight:600}
+#mMoney{color:var(--ok)}
+.mmeters{flex:1;display:flex;flex-direction:column;gap:3px;min-width:60px}
+.mm{display:flex;align-items:center;gap:5px}
+.mm span{font-size:9px;width:10px;text-align:center;opacity:.8}
+.mm div{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+.mm i{display:block;height:100%;width:50%;border-radius:3px;transition:width .2s}
+.mm.st i{background:linear-gradient(90deg,var(--wire),var(--tape))}
+.mm.sa i{background:linear-gradient(90deg,#8a6bd1,#c9a8ff)}
+.mm.low i{background:var(--danger)}
+.mright{display:flex;align-items:center;gap:6px}
+#mJake{font-size:9px;letter-spacing:.14em;color:var(--dim);font-weight:600}
+.meye{width:11px;height:11px;border-radius:50%;background:var(--ok)}
+.meye.near{background:var(--tape)}
+.meye.watching{background:var(--danger);animation:pulse .5s infinite alternate}
+.mbar.watching{border-color:var(--danger);background:rgba(80,14,6,.85)}
+.mbar.watching #mJake{color:#ffb3a3}
+.mstr{display:flex;gap:3px;margin-left:2px}
+.mstr i{width:7px;height:7px;border-radius:2px;border:1px solid var(--dim)}
+.mstr i.on{background:var(--danger);border-color:var(--danger)}
+.mrow2{display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;padding-left:2px}
+#mHold:empty,#mFx:empty{display:none}
+#mHold{font-size:11px;font-weight:600;background:var(--plate);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+#mFx{display:flex;gap:4px}
+#mFx .chip{border-radius:999px;padding:3px 8px}
+.touch .corner.tl{top:calc(env(safe-area-inset-top,0px) + 52px);left:auto;right:max(8px,env(safe-area-inset-right,0px));align-items:flex-end}
+.touch .ticket{width:auto;min-width:0;border-radius:999px}
+.touch .ticket:not(.collapsed){border-radius:10px;width:170px}
+.touch #ticketHead{padding:5px 12px;gap:10px}
+.touch #tList{padding:0 12px 8px}
+.touch #talk{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 88px);width:min(440px,calc(100vw - 24px));font-size:12px;padding:8px 12px;line-height:1.4}
+.touch #talk b{font-size:13px;margin-bottom:0}
+.touch #toasts{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 168px);width:min(360px,calc(100vw - 40px))}
+.touch .toast{font-size:11px;padding:4px 10px;border-radius:999px}
+.touch #promptWrap{top:calc(50% + 18px)}
+.touch #prompt{font-size:11px;padding:4px 10px;border-radius:999px;max-width:78vw}
+.touch #joy{width:116px;height:116px;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);background:rgba(18,17,13,.32)}
+.touch #knob{width:48px;height:48px;margin:-24px 0 0 -24px;background:rgba(242,234,216,.75)}
+.touch #btns{grid-template-columns:52px 80px;grid-template-rows:52px 52px 80px;gap:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}
+.touch #btns button{width:52px;height:52px;font-size:10px;position:relative;background:rgba(18,17,13,.55)}
+.touch #btns #bCart{grid-column:2;grid-row:1}
+.touch #btns #bVape{grid-column:1;grid-row:2}
+.touch #btns #bRun{grid-column:1;grid-row:3;align-self:end}
+.touch #btns .big{grid-column:2;grid-row:2/4;align-self:end;width:80px;height:80px;font-size:19px;background:var(--tape);color:var(--ink);border:none;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.bdg{display:none}
+.touch .bdg{display:grid;place-items:center;position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--bone);color:var(--ink);font-family:var(--mono);font-size:10px;font-weight:700;box-sizing:border-box}
+@media (orientation:landscape) and (max-height:500px){
+  .touch #talk{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:min(420px,calc(100vw - 340px))}
+  .touch #toasts{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 52px);width:min(320px,calc(100vw - 420px))}
+  .touch #btns{grid-template-columns:48px 72px;grid-template-rows:48px 48px 72px;gap:6px}
+  .touch #btns button{width:48px;height:48px}
+  .touch #btns .big{width:72px;height:72px;font-size:17px}
+  .touch #joy{width:104px;height:104px}
+}
 @media (max-width:560px){
   .stats,.ticket{width:158px}
   .day,.clock{font-size:18px}
@@ -190,6 +251,14 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
 <div id="haze"></div><div id="vig"></div><div id="flash"></div>
 
 <div id="hud" hidden>
+  <div id="mhud">
+    <div class="mbar">
+      <div class="mleft"><b id="mDay">D1</b><span id="mClock">7:00 AM</span><span id="mMoney">$120</span></div>
+      <div class="mmeters"><div class="mm st" title="Stamina"><span>⚡</span><div><i id="mSt"></i></div></div><div class="mm sa" title="Sanity"><span>☺</span><div><i id="mSa"></i></div></div></div>
+      <div class="mright"><span id="mJake">JAKE</span><span class="meye" id="mEye"></span><span class="mstr" id="mStr"><i></i><i></i><i></i></span></div>
+    </div>
+    <div class="mrow2"><span id="mHold"></span><span id="mFx"></span></div>
+  </div>
   <div class="corner tl">
     <div class="plate stats">
       <div class="tapebar"></div>
@@ -218,8 +287,8 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
   <div id="look"></div>
   <div id="joy"><div id="knob"></div></div>
   <div id="btns">
-    <button id="bVape" type="button">VAPE</button>
-    <button id="bCart" type="button">CART</button>
+    <button id="bVape" type="button">VAPE<b class="bdg" id="bVapeN">20</b></button>
+    <button id="bCart" type="button">CART<b class="bdg" id="bCartN">8</b></button>
     <button id="bUse" class="big" type="button">USE</button>
     <button id="bRun" type="button">RUN</button>
     <button id="bTicket" type="button">LIST</button>
@@ -1700,6 +1769,7 @@ function renderSupply(){
 $('supplyItems').addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(!b)return;const it=SUPPLY.find(x=>x.id===b.dataset.id);
   if(S.inv[it.id]>=capOf(it.id))return;Object.keys(S.inv).forEach(k=>{if(k!==it.id)S.inv[k]=0;});S.inv[it.id]=capOf(it.id);tone(520,.06,'triangle',.04);renderSupply();});
 $('btnPutBack').addEventListener('click',()=>{Object.keys(S.inv).forEach(k=>S.inv[k]=0);renderSupply();});
+function carryShort(){const c=carrying();if(!c)return '';const n=S.inv[c];return {gang:`${n} boxes`,oct:`${n} ceiling boxes`,panel:'load center',w14:`14/2 ×${n}`,w12:`12/2 ×${n}`}[c];}
 function carryText(){const c=carrying();if(!c)return 'nothing';const n=S.inv[c];
   return {gang:`${n} blue box${n===1?'':'es'}`,oct:`${n} ceiling box${n===1?'':'es'}`,panel:'a load center',w14:`14/2 reel (${n} run${n===1?'':'s'} left)`,w12:`12/2 reel (${n} run${n===1?'':'s'} left)`}[c];}
 $('btnSupplyClose').addEventListener('click',()=>{$('supply').hidden=true;S.mode='play';lock();});
@@ -1917,6 +1987,13 @@ function hudUpdate(view){
   $('vig').style.opacity=S.stamina<25?(1-S.stamina/25)*.9:0;
   $('lockHint').hidden=isTouch||locked;
   $('ticket').hidden=S.phase!=='work';$('belt').hidden=S.phase!=='work';
+  if(isTouch){setT($('mDay'),'D'+S.day);setT($('mClock'),S.phase==='work'?fmtClock(S.time):S.phase==='store'?'LOWS':'HOME');setT($('mMoney'),(S.money<0?'−$':'$')+Math.abs(S.money));
+    $('mSt').style.width=S.stamina+'%';$('mSa').style.width=S.sanity+'%';$('mSt').parentNode.parentNode.classList.toggle('low',S.stamina<20);$('mSa').parentNode.parentNode.classList.toggle('low',S.sanity<25);
+    const ec={watching:'watching',near:'near',coming:'near'}[view.s]||'';if($('mEye')._c!==ec){$('mEye')._c=ec;$('mEye').className='meye '+ec;$('mEye').closest('.mbar').classList.toggle('watching',ec==='watching');}
+    setT($('mJake'),view.s==='watching'?'SEES YOU':view.s==='coming'?'COMING':S.phase==='work'?'JAKE':'OFF');
+    [...$('mStr').children].forEach((el,i)=>el.classList.toggle('on',i<S.strikes));
+    setT($('mHold'),S.phase==='work'&&carrying()?'✋ '+carryShort():'');if($('mFx')._v!==fxs){$('mFx')._v=fxs;$('mFx').innerHTML=fxs;}
+    setT($('bVapeN'),String(S.vape));setT($('bCartN'),String(S.cart));}
 }
 
 /* ================= POST-PROCESSING ================= */
@@ -1959,8 +2036,9 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='1.8';
+const GAME_VERSION='1.9';
 const PATCHES=[
+  {v:'1.9',title:'Cleaner phone screen',items:['One slim top bar on phones: day, time, money, stamina, sanity, Jake and strikes','Ticket is a small pill; tap it to see the list','What you\'re holding shows as a small chip','Vape and cart counts sit right on their buttons','Smaller dialogue that stays out of the middle of the screen','New home-screen icon with Jake on the job']},
   {v:'1.8',title:'Brayden and Ethan, for real',items:['Jake won\'t shut up about his boat, his truck, fishing and random car stuff','Brayden: messy dark brown hair, black tee with the yellow logo, light-wash jeans, tape measure in hand','Ethan: white backwards cap, light brown hair, faint mustache, dark tee and black cord necklace','Both based on your video from the job site']},
   {v:'1.7',title:'Real-life models',items:['Everyone rebuilt with smooth bodies, real faces, hands with fingers, and knees and elbows that bend','Both trucks rebuilt with curved bodies, real tires and rims, grilles, mirrors and an open pickup bed','Layered pine trees and leafy trees','Neighbor houses with siding, shingled roofs, trimmed windows, doors, porches and bushes','Rounded porta-john, a proper tapered dumpster, and a generator on a tube frame','Softer, rounded furniture at home','Max\'s hand now has real fingers with knuckles and nails']},
   {v:'1.6',title:'LOWS is open',items:['After each workday you can stop at LOWS on the drive home','Walk the store and buy tools in the Tool Corral','Every tool upgrades Basic → Pro → Master; the stand trim turns bronze, silver, gold','12 tools: pliers, cordless drill, fish tape, cable stapler, tool belt, boots, knee pads, taller ladder, ladder dolly, jobsite radio, odor eliminator, ear plugs','The drill and stapler show up in Max\'s hand when you use them','Your laptop still sells pods, carts, beer and the vape tank mod']},
