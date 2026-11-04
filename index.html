@@ -1185,19 +1185,27 @@ function makeLadder(x,z,yaw){const g=new THREE.Group();g.rotation.order='YXZ';g.
 UNITS.forEach(u=>{if(u.type==='house')makeLadder(u.x+3,u.z+u.d/2+1.4,rand(-.5,.5));else makeLadder(u.cx-1.3,u.cz+.6,rand(-.5,.5));});
 makeLadder(RIG.x0-2.6,RIG.z+2,1.2);makeLadder(RIG.x0-3.4,RIG.z+2.3,1.5);
 const canReach=p=>{if(p[1]<=2.05)return true;const L=S.onLadder;return !!L&&Math.hypot(p[0]-L.g.position.x,p[2]-L.g.position.z)<tv('tall');};
-function pickUp(L){S.drag=L;S.carrySlide=0;L.g.rotation.z=0;tone(200,.06,'square',.03);tone(150,.06,'square',.03);}
-function setDown(){const L=S.drag;if(!L)return;const ry=P.yaw+Math.PI;let spot=null;for(const dd of [.9,.75,1.05,.6,1.2])for(const sd of [0,-.25,.25,-.5,.5]){const x=P.x-Math.sin(P.yaw)*dd+Math.cos(P.yaw)*sd,z=P.z-Math.cos(P.yaw)*dd-Math.sin(P.yaw)*sd;if(!spot&&ladderFootClear(x,z,ry))spot=[x,z];}
-  if(!spot){toast('No room to set the ladder down here.','bad');tone(90,.08,'square',.04);return;}const [x,z]=spot;L.g.position.set(x,0,z);L.g.rotation.set(0,P.yaw+Math.PI,0);L.g.updateMatrixWorld(true);S.drag=null;tone(120,.08,'triangle',.06);}
+function pickUp(L){S.drag=L;S.carrySlide=0;S.carryUp=!fitCarry(P.x,P.z,P.yaw);L.g.rotation.z=0;tone(200,.06,'square',.03);tone(150,.06,'square',.03);}
+function setDown(){const L=S.drag;if(!L)return;const ry=P.yaw;let spot=null;for(const dd of [.9,.75,1.05,.6,1.2])for(const sd of [0,-.25,.25,-.5,.5]){const x=P.x-Math.sin(P.yaw)*dd+Math.cos(P.yaw)*sd,z=P.z-Math.cos(P.yaw)*dd-Math.sin(P.yaw)*sd;
+    if(!spot&&ladderFootClear(x,z,ry)&&losClear(P.x,P.z,x,z)&&losClear(P.x,P.z,x-Math.sin(ry)*.5,z-Math.cos(ry)*.5))spot=[x,z];}
+  if(!spot){toast('No room to set the ladder down here.','bad');tone(90,.08,'square',.04);return;}const [x,z]=spot;L.g.position.set(x,0,z);L.g.rotation.set(0,ry,0);L.g.scale.set(1,1,1);L.g.updateMatrixWorld(true);S.drag=null;S.carryUp=false;tone(120,.08,'triangle',.06);}
 function ladderStep(L,dir){const y=P.yaw,fx=-Math.sin(y),fz=-Math.cos(y),side=.06*dir;const cx=Math.cos(y),cz=-Math.sin(y);
   let nx=L.g.position.x+fx*.2+cx*side,nz=L.g.position.z+fz*.2+cz*side;const ax=nx,az=nz;
   if(!ladderFootClear(nx,nz,L.g.rotation.y)||inWall(P.x+fx*.2+cx*side,P.z+fz*.2+cz*side,.25)||pushFromLadders(nx,nz,.1,L)[0]!==nx){tone(90,.06,'square',.04);S.bonk=(S.bonk||0)+1;if(S.bonk%3===1)toast('Ladder is up against something.');return false;}
   L.g.position.x=ax;L.g.position.z=az;L.g.updateMatrixWorld(true);P.x+=fx*.2+cx*side;P.z+=fz*.2+cz*side;tone(rand(130,170),.07,'square',.045);S.stamina=Math.max(0,S.stamina-.6);return true;}
 // ---- ladder collision helpers ----
 const inWall=(x,z,r=.04)=>colliders.some(c=>x>c.a-r&&x<c.b+r&&z>c.c-r&&z<c.d+r);
-function ladderFootClear(x,z,yaw){const fx=Math.sin(yaw),fz=Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);
+function ladderFootClear(x,z,yaw){return rectClear(x,z,yaw,.28,-.47,.43,.02);}
+function ladderFootClearOld(x,z,yaw){const fx=Math.sin(yaw),fz=Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);
   for(const [a,b] of [[-.27,.42],[.27,.42],[-.27,-.46],[.27,-.46],[0,0],[-.27,0],[.27,0]])if(inWall(x+rx*a+fx*b,z+rz*a+fz*b,.03))return false;return true;}
 function carryPose(px,pz,yaw,slide){const fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);
-  const ox=px+rx*.42,oz=pz+rz*.42;for(const w of [-.3,0,.3])for(let t=-.88+slide;t<=1.0+slide;t+=.08)if(inWall(ox+rx*w+fx*t,oz+rz*w+fz*t,.04))return null;return {x:ox-fx*(.85-slide),z:oz-fz*(.85-slide)};}
+  const ox=px+rx*.42,oz=pz+rz*.42;if(!losClear(px,pz,ox,oz))return null;for(let w=-.3;w<=.3001;w+=.06)for(let t=-.88+slide;t<=1.0+slide;t+=.06)if(inWall(ox+rx*w+fx*t,oz+rz*w+fz*t,.03))return null;return {x:ox-fx*(.85-slide),z:oz-fz*(.85-slide)};}
+function rectClear(cx,cz,yaw,hw,d0,d1,m=.02){const rx=Math.cos(yaw),rz=-Math.sin(yaw),fx=Math.sin(yaw),fz=Math.cos(yaw);
+  for(let u=-hw;u<=hw+1e-6;u+=Math.min(.06,hw||1))for(let v=d0;v<=d1+1e-6;v+=.06)if(inWall(cx+rx*u+fx*v,cz+rz*u+fz*v,m))return false;return true;}
+function losClear(x0,z0,x1,z1){const d=Math.hypot(x1-x0,z1-z0),n=Math.max(2,Math.ceil(d/.04));for(let k=0;k<=n;k++){const t=k/n;if(inWall(x0+(x1-x0)*t,z0+(z1-z0)*t,.02))return false;}return true;}
+function upSpot(px,pz,yaw){const fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);
+  for(const [a,b] of [[.42,0],[-.42,0],[.3,.25],[-.3,.25],[0,.35],[.25,-.2],[-.25,-.2],[0,-.3],[.2,0],[-.2,0],[0,0]]){const x=px+rx*a+fx*b,z=pz+rz*a+fz*b;
+    if(losClear(px,pz,x,z)&&rectClear(x,z,yaw,.29,-.1,.1,.02))return [x,z];}return null;}
 function fitCarry(px,pz,yaw){const base=S.carrySlide||0;for(const s of [base,0,-.15,.15,-.3,.3,-.45,.45,-.6,.6,-.75,.75]){const p=carryPose(px,pz,yaw,s);if(p)return {p,s};}return null;}
 function pushFromLadders(x,z,r,skip,nudge){for(const L of ladders){if(L===skip||L===S.drag||L===S.onLadder)continue;const lp=L.g.position;const dx=x-lp.x,dz=z-lp.z,d=Math.hypot(dx,dz),m=r+.42;
   if(d<m&&d>1e-4){if(nudge){let nx=lp.x-dx/d*(m-d)*.6,nz=lp.z-dz/d*(m-d)*.6;if(ladderFootClear(nx,nz,L.g.rotation.y)){lp.x=nx;lp.z=nz;L.g.updateMatrixWorld(true);}}
@@ -1718,7 +1726,7 @@ function jakeWalkUp(){
   if(moodWalkUp()){showChoices();return;}
   const pool=[];JAKE_WALKUP.forEach(l=>{if(l.need&&!l.need())return;for(let k=0;k<(l.w||1);k++)pool.push(l);});
   const l=pick(pool);let txt=l.t;if(txt.includes('{u}')){const ui=nextUnit();txt=txt.replace('{u}',ui!=null?UNITS[ui].name:'another unit');}
-  say('JAKE',txt,5);if(l.mad)grumble();S.sanity=Math.max(0,S.sanity-(l.mad?9:4)*tv('plugs'));
+  say('JAKE',txt,5);if(l.mad)grumble();S.sanity=Math.max(0,S.sanity-(l.mad?9:4)*tv('plugs')*(ab('zen')?0:1));
   if(l.fx){const r=l.fx();if(r)setTimeout(()=>toast(r,'bad'),400);}
   showChoices();
 }
@@ -1751,7 +1759,7 @@ const RESP_GOSSIP_POS=[{t:"No way. He really did that?",m:6,r:"Swear on my boat.
 const RESP_GOSSIP_NEG=[{t:"They're my boys, Jake. Leave 'em alone.",m:-6,san:4,r:"...Fine. Loyal. I respect it. Kind of."},{t:"Do you talk about me like this too?",m:-8,san:5,r:"What? No. ...No."},{t:"Maybe train them better then.",m:-12,san:8,r:"Wow. Okay. Back to work."}];
 RESP_POS.push(...[["The truck does look clean today.", 6, "Midnight Pearl, baby. Hand washed."], ["I'll stay late if you need me.", 7, "That's what I like. No overtime though."], ["You're a good boss, Jake.", 8, "...Thanks, Max. Don't make it weird."], ["Got any fishing tips?", 6, "Patience. And a better boat than everyone else."], ["I'll have this unit done by lunch.", 5, "I'll hold you to that."]].map(([t,m,r])=>({t,m,r})));
 RESP_NEG.push(...[["Your boat's a bathtub with a motor.", -17, 10, "Take that back. Take it back RIGHT now."], ["Is this story gonna end?", -8, 5, "It ends when I say it ends."], ["Lifted trucks are for short guys.", -15, 9, "I'm six foot. With the boots."], ["Can I get paid for listening to this?", -6, 4, "You're getting paid to work. Do that."], ["Wow. Riveting stuff, boss.", -5, 3, "I can hear the sarcasm, Max."]].map(([t,m,san,r])=>({t,m,san,r})));
-function showChoices(){if(S.tut>=0||S.phase!=='work')return;const s=S.sanity,neg=s>=75?1:s>=50?2:s>=25?3:4;
+function showChoices(){if(S.tut>=0||S.phase!=='work')return;const s=S.sanity,neg=ab('smooth')?0:s>=75?1:s>=50?2:s>=25?3:4;
   const pick2=(arr,n)=>{const a=arr.filter(r=>!r.need||r.need()).slice();const out=[];while(out.length<n&&a.length)out.push(a.splice((Math.random()*a.length)|0,1)[0]);return out;};
   const G=S.gossip;S.gossip=false;const NP=G?RESP_GOSSIP_NEG.concat(RESP_NEG.slice(0,3)):RESP_NEG,PP=G?RESP_GOSSIP_POS.concat(RESP_POS.slice(0,2)):RESP_POS;
   const list=[...pick2(NP,neg).map(r=>({...r,neg:1})),...pick2(PP,4-neg)];for(let i=list.length-1;i>0;i--){const k=(Math.random()*(i+1))|0;[list[i],list[k]]=[list[k],list[i]];}
@@ -1839,7 +1847,7 @@ function moodWalkUp(){
   if(isBFF()){const pool=[];BFF_LINES.forEach(l=>{if(l.need&&!l.need())return;for(let k=0;k<(l.w||1);k++)pool.push(l);});const l=pick(pool);S.gossip=!!l.gossip;say('JAKE',l.t,5);S.sanity=Math.min(100,S.sanity+3);if(l.fx){const r=l.fx();if(r)setTimeout(()=>toast(r,'good'),400);}return true;}
   if(isAnnoyed()){const pool=[];PISSED_LINES.forEach(l=>{if(l.need&&!l.need())return;for(let k=0;k<(l.w||1);k++)pool.push(l);});const l=pick(pool);
     let txt=l.t;if(txt.includes('{u}')){const ui=nextUnit();txt=txt.replace('{u}',ui!=null?UNITS[ui].name:'another unit');}
-    say('JAKE',txt,5);grumble();S.sanity=Math.max(0,S.sanity-(isPissed()?12:9)*tv('plugs'));if(l.fx){const r=l.fx();if(r)setTimeout(()=>toast(r,'bad'),400);}return true;}
+    say('JAKE',txt,5);grumble();S.sanity=Math.max(0,S.sanity-(isPissed()?12:9)*tv('plugs')*(ab('zen')?0:1));if(l.fx){const r=l.fx();if(r)setTimeout(()=>toast(r,'bad'),400);}return true;}
   return false;}
 
 /* ================= INPUT ================= */
@@ -1917,7 +1925,7 @@ function morning(first){
   const crew=[brayden,ethan].filter(n=>n.assign!=null).map(n=>`${n.name[0]+n.name.slice(1).toLowerCase()} has ${UNITS[n.assign].name}`).join(', ');
   say('JAKE',(first?`Morning, Max. New building. Your ticket: ${names}. Boxes and wire are in the supply trailer. Kitchens get 12/2, everything else 14/2.`:`Morning. Your ticket: ${names}. Every box. Let's go.`)+(crew?` ${crew}.`:''),7);
   S.sanity=Math.max(S.sanity,20);
-  S.forgiven=false;S.job=null;S.mood=Math.round(S.mood*.85);
+  S.forgiven=false;S.job=null;S.hits=[];S.ab={};S.db={};S.forgot=0;S.smellPow=1;S.mood=Math.round(S.mood*.85);
   if(first&&!S.tutDone&&S.day===1)startTut();else hideTut();
   if(S.hungover)setTimeout(()=>{if(S.phase==='work')say('ETHAN','Bro you look ROUGH. How many did you have?',3.5);},6500);
   S.mode='play';save();
@@ -2046,12 +2054,13 @@ let curBox=null,prog=0;
 function interact(dt){
   camera.updateMatrixWorld();ray.setFromCamera(center,camera);
   let msg='',warn=false,wiring=false;
+  if(S.forgot>0){setT($('prompt'),'...what was I doing?');$('prompt').classList.add('warn');$('cross').classList.remove('on');$('prog').style.opacity=0;return false;}
   if(S.drag){setT($('prompt'),K('Carrying the ladder · G to set it down','Carrying the ladder · GRAB to set it down'));$('prompt').classList.remove('warn');$('cross').classList.remove('on');$('prog').style.opacity=0;return false;}
   S.lookLadder=null;
   const hits=ray.intersectObjects(ptInter.length?inter.concat(ptInter):inter,false);
   const hh=hits.find(h=>{const u=h.object.userData.i;return u&&u.active!==false&&!(u.type==='ladder'&&(u.L===S.onLadder||u.L===S.drag));});
   const it=hh?hh.object.userData.i:null;
-  const base=()=>(S.boost>0?2:1)*(S.stamina<1?.35:S.stamina<20?.6:1)*(S.sanity<25?.75:1);
+  const base=()=>boostMul()*(S.stamina<1?.35:S.stamina<20?.6:1)*(S.sanity<25?.75:1);
   if(it){
     if(it.type==='box'){const b=it.b,u=UNITS[b.ui],[bxI,wI]=NEED[b.kind],gauge=wI==='w12'?'12/2':'14/2';
       if(b.done)msg=`${u.name} · ${LABELS[b.kind]} wired${wI?' ('+gauge+')':''}`;
@@ -2113,14 +2122,41 @@ function interact(dt){
   return wiring;
 }
 
+/* ================= CART HIGH: STACKS, ABILITIES, DEBUFFS ================= */
+const ABIL={lock:{n:'LOCKED IN',d:'wiring faster'},eagle:{n:'EAGLE EYE',d:'see Jake through walls'},zen:{n:'ZEN',d:'Jake can\'t get to you'},lungs:{n:'IRON LUNGS',d:'no stamina drain'},
+  smooth:{n:'SMOOTH TALKER',d:'every reply is a good one'},zoom:{n:'ZOOMIES',d:'move 20% faster'}};
+const ab=k=>S.ab&&S.ab[k]>0, db=k=>S.db&&S.db[k]>0;
+const highStack=()=>Math.min(4,(S.hits||[]).length);
+const boostMul=()=>S.boost>0?(1+.3*highStack())*(db('slow')?.8:1):1;
+function cartHit(){const now=performance.now()/1000;S.hits=(S.hits||[]).filter(t=>now-t<150);S.hits.push(now);S.ab=S.ab||{};S.db=S.db||{};
+  const n=S.hits.length,st=Math.min(4,n),dur=25+10*st;S.boost=Math.max(S.boost,dur);S.ab.lock=dur;
+  if(n>=2&&n<=4){const pool=Object.keys(ABIL).filter(k=>k!=='lock'&&!ab(k));if(pool.length){const k=pick(pool);S.ab[k]=dur;setTimeout(()=>toast(`New ability: ${ABIL[k].n} · ${ABIL[k].d}`,'good'),700);}}
+  Object.keys(S.ab).forEach(k=>{if(S.ab[k]>0)S.ab[k]=Math.max(S.ab[k],dur);});
+  // smell grows with the stack
+  S.smellPow=st/4;S.smell=[0,9,18,28,40][st]*tv('spray')+(n>4?(n-4)*8:0);dropSmell(P.x,P.z,true);
+  if(n>4){const lvl=n-4;S.db.slow=60+lvl*20;if(lvl>=2)S.db.forget=60+lvl*15;if(lvl>=3)S.db.munch=60;
+    toast(lvl===1?'Too high. Your legs feel like sandbags (SLOW).':lvl===2?'Way too high. You keep forgetting what you were doing (FORGETFUL).':'Cooked. Munchies kicking in, stamina tanking (MUNCHIES).','bad');}
+  else toast(st===1?`Locked in ×1: wiring ${Math.round(boostMul()*100-100)}% faster for ${dur}s. Light smell.`:`Locked in ×${st}: wiring ${Math.round(boostMul()*100-100)}% faster for ${dur}s. You smell ${['','a little','pretty strong','REALLY strong','like a dispensary'][st]}.`,'good');}
+let forgetT=12;
+function highTick(dt){if(S.ab)for(const k in S.ab)if(S.ab[k]>0)S.ab[k]=Math.max(0,S.ab[k]-dt);if(S.db)for(const k in S.db)if(S.db[k]>0)S.db[k]=Math.max(0,S.db[k]-dt);
+  if(S.boost<=0&&S.hits&&S.hits.length){const now=performance.now()/1000;S.hits=S.hits.filter(t=>now-t<150);}
+  eagleMark.visible=ab('eagle')&&S.phase==='work';if(eagleMark.visible){const jp=jake.g.position;eagleMark.position.set(jp.x,2.75,jp.z);}
+  if(db('forget')&&S.phase==='work'){forgetT-=dt;if(forgetT<=0){forgetT=rand(16,26);const c=carrying();const r=Math.random();
+      if(c&&r<.4){const lose=Math.min(S.inv[c],1+((Math.random()*3)|0));S.inv[c]-=lose;toast(`Wait... where'd those go? (lost ${lose} ${ITEM[c]||c})`,'bad');}
+      else if(r<.75){const bs=boxes.filter(b=>S.ticket.includes(b.ui)&&b.mounted&&!b.done&&b.runIdx>0);if(bs.length){const b=pick(bs);b.runIdx=Math.max(0,b.runIdx-1);updateLoose(b);refreshPts(b);toast('Did I pull that one already? ...Nope. Doing it again.','bad');}else{S.forgot=5;toast('Uh... what was I doing?','bad');}}
+      else{S.forgot=5;toast('Uh... what was I doing?','bad');}}}
+  if(S.forgot>0)S.forgot-=dt;}
+const eagleMark=(()=>{const c=document.createElement('canvas');c.width=128;c.height=128;const x=c.getContext('2d');x.strokeStyle='#ff4a2b';x.lineWidth=10;x.beginPath();x.arc(64,64,44,0,6.283);x.stroke();x.fillStyle='#ff4a2b';x.beginPath();x.arc(64,64,14,0,6.283);x.fill();
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false,depthWrite:false}));s.scale.set(.5,.5,1);s.renderOrder=998;s.visible=false;scene.add(s);return s;})();
+
 /* ================= SMELL TRAIL ================= */
 const smellTex=ctex(128,128,(x)=>{for(let i=0;i<14;i++){const cx=rand(34,94),cy=rand(34,94),r=rand(18,40);const g=x.createRadialGradient(cx,cy,1,cx,cy,r);g.addColorStop(0,'rgba(255,255,255,.7)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,128,128);}},1,1);
 const clouds=[];let smellDrop=0,lastDrop=[0,0],sniffCD=0;
 const unitAt=(x,z)=>UNITS.findIndex(u=>x>u.x&&x<u.x+u.w&&z>u.z&&z<u.z+u.d);
-function dropSmell(x,z,big){const inside=unitAt(x,z)>=0;const max=(big?1.7:1)*(inside?75:16)*tv('spray');
+function dropSmell(x,z,big){const inside=unitAt(x,z)>=0,pw=S.smellPow??1;const max=(big?1.7:1)*(inside?75:16)*tv('spray')*(.25+.75*pw);
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:smellTex,color:LIN(0xa8d47a),transparent:true,depthWrite:false,opacity:0}));
   s.position.set(x+rand(-.2,.2),rand(1.1,1.7),z+rand(-.2,.2));const sc=big?2.8:1.9;s.scale.set(sc,sc*.75,1);scene.add(s);
-  clouds.push({x,z,life:0,max,inside,s,base:big?.75:.5,r:big?2.6:1.8});lastDrop=[x,z];}
+  clouds.push({x,z,life:0,max,inside,s,base:(big?.75:.5)*(.35+.65*pw),r:(big?2.6:1.8)*(.55+.45*pw)});s.scale.multiplyScalar(.6+.4*pw);lastDrop=[x,z];}
 function updateSmell(dt,moving){
   if(S.smell>0){S.smell-=dt;smellDrop-=dt;if(smellDrop<=0&&Math.hypot(P.x-lastDrop[0],P.z-lastDrop[1])>1.1){smellDrop=.5;dropSmell(P.x,P.z,false);}}
   sniffCD-=dt;const jp=jake.g.position;
@@ -2207,7 +2243,7 @@ $('tutSkip').addEventListener('click',()=>{if(S.tut>=0)finishTut(true);});
 const HOME_LINES={BRAYDEN:["Bro this couch is better than my bed. I'm not kidding.", "Jake texted me 'u up' at 9 PM. About the boat. Again.", "You ever think about how wire is just metal spaghetti?", "If I fall asleep here, just leave me. I'm happy.", "Bass Country Live is honestly peak TV.", "I'd wire my own house but I'd mess it up on purpose so I don't have to fix anything.", "Your fridge hums in E flat. I can't unhear it.", "Real talk, you're the best electrician on the crew. Don't tell Ethan.", "My mom asked what I do. I said 'fight Jake.' She said that's not a job.", "Ok one more episode then I'm going home. (He will not go home.)"],ETHAN:["This is the most relaxed I've been all week.", "Jake called me while I was on the way here. I let it ring. Felt powerful.", "I've been on thin ice so long I'm basically a figure skater.", "Your place smells like pizza and regret. I love it.", "If Jake shows up here I'm hiding in your bathroom.", "We should start our own company. 'Not Jake Electric.' Boom.", "That pizza box on the table is load-bearing. Don't move it.", "I'm not drunk, I'm just horizontally motivated.", "Pass me a beer. No, the cold one. They're all cold? Perfect.", "Tomorrow I'm gonna be so productive. (He says this every night.)"]};
 const LOOKS={BRAYDEN:{shirt:0x161618,logo:true,fluffy:true,slim:true,jeansOnly:true,pants:0x7d9cc2,shoe:0x26262a,skin:0xe8bfa0,hair:0x3b2618,eyes:0x5a4a3a},
   ETHAN:{shirt:0x22252b,hat:0xf1eee6,cap:true,backwards:true,tufts:true,necklace:true,stubble:0x9a7a5a,eyes:0x6f8a96,hair:0x8a6a48,skin:0xeac2a4,jeansOnly:true,pants:0x4a5f80,shoe:0x2a2a2e}};
-const SEATS={BRAYDEN:[HX-.95,HZ+2.42],ETHAN:[HX+.15,HZ+2.42]};
+const SEATS={BRAYDEN:[HX-.95,HZ+2.36],ETHAN:[HX+.15,HZ+2.36]};
 const guests={};
 ['BRAYDEN','ETHAN'].forEach(nm=>{const m=makeGuy({...LOOKS[nm],name:nm});m.g.visible=false;m.hit.userData.i={type:'friend',nm};inter.push(m.hit);guests[nm]={...m,state:'away',path:[],talk:0,t:0};});
 const DOOR=[HX+3.85,HZ+.6];
@@ -2229,7 +2265,7 @@ function guestTick(dt){if(S.phase!=='home')return;let here=0;
     if(G.state==='walk'){const p=G.g.position;const [tx,tz]=G.path[0];const dx=tx-p.x,dz=tz-p.z,dd=Math.hypot(dx,dz);
       if(dd<.06){G.path.shift();if(!G.path.length){G.state='sit';}}else{const st=Math.min(dd,1.4*dt);p.x+=dx/dd*st;p.z+=dz/dd*st;G.g.rotation.y=Math.atan2(dx,dz);}
       G.t+=dt*7.5;const sw=Math.sin(G.t)*.5;G.legs[0].rotation.x=sw;G.legs[1].rotation.x=-sw;G.legs.forEach(l=>l.userData.knee&&(l.userData.knee.rotation.x=Math.max(0,Math.sin(G.t+1.4))*.8));G.body.position.y=0;}
-    if(G.state==='sit'){here++;G.g.rotation.y=lerp(G.g.rotation.y,Math.PI,.15);G.body.position.y=lerp(G.body.position.y,-.44,.2);
+    if(G.state==='sit'){here++;G.g.rotation.y=lerp(G.g.rotation.y,Math.PI,.15);G.body.position.y=lerp(G.body.position.y,-.3,.2);
       G.legs.forEach(l=>{l.rotation.x=lerp(l.rotation.x,-1.45,.2);if(l.userData.knee)l.userData.knee.rotation.x=lerp(l.userData.knee.rotation.x,1.45,.2);});
       G.arms.forEach((a,i)=>{a.rotation.x=lerp(a.rotation.x,-.35,.1);a.rotation.z=lerp(a.rotation.z,i?-.15:.15,.1);});
       G.head.rotation.y=Math.sin(performance.now()/2600+(nm==='ETHAN'?2:0))*.25;
@@ -2293,7 +2329,7 @@ function tick(dt){
       S.rock=lerp(S.rock||0,side*.11,Math.min(1,dt*10));L.g.rotation.z=-S.rock;}
     f=s=0;moving=false;}
   const run=(keys.ShiftLeft||keys.ShiftRight||runLatch)&&moving&&S.stamina>3&&!S.drag;
-  let spd=3.1*tv('boots')*(run?1.65:1)*(S.stamina<20?.7:1)*(S.boost>0?1.1:1);
+  let spd=3.1*tv('boots')*(run?1.65:1)*(S.stamina<20?.7:1)*(S.boost>0?1.1:1)*(ab('zoom')?1.2:1)*(db('slow')?.65:1);
   if(S.hit)spd*=.5;if(S.drag)spd*=tv('dolly');
   const sy=Math.sin(P.yaw),cy=Math.cos(P.yaw);
   let nx=P.x+(-sy*f+cy*s)*spd*dt,nz=P.z+(-cy*f-sy*s)*spd*dt;
@@ -2301,11 +2337,13 @@ function tick(dt){
   if(S.phase==='work'&&!S.onLadder){[nx,nz]=pushFromLadders(nx,nz,.3,null,false);[nx,nz]=collideStatic(nx,nz,.3);}
   if(npcs)for(const n of npcs){const dx=nx-n.g.position.x,dz=nz-n.g.position.z,d=Math.hypot(dx,dz);if(d<.6&&d>1e-4){nx=n.g.position.x+dx/d*.6;nz=n.g.position.z+dz/d*.6;}}
   if(S.phase==='work'){nx=clamp(nx,-35.6,35.6);nz=clamp(nz,-21.6,30.6);}
-  if(S.drag&&!S.onLadder){const fit=fitCarry(nx,nz,P.yaw);if(fit){S.carrySlide=fit.s;}else{const keep=fitCarry(P.x,P.z,P.yaw);if(keep){nx=P.x;nz=P.z;S.carrySlide=keep.s;}else{P.yaw=S.lastYaw??P.yaw;nx=P.x;nz=P.z;}}}
+  if(S.drag&&!S.onLadder){const fit=fitCarry(nx,nz,P.yaw);if(fit){S.carrySlide=fit.s;S.carryUp=false;}else{S.carryUp=true;if(!upSpot(nx,nz,P.yaw)&&upSpot(P.x,P.z,P.yaw)){nx=P.x;nz=P.z;}}}
   S.lastYaw=P.yaw;
   if(!S.onLadder){P.x=nx;P.z=nz;}
   if(S.drag){const L=S.drag,y=P.yaw,fx=-Math.sin(y),fz=-Math.cos(y),rx=Math.cos(y),rz=-Math.sin(y),bb=moving?Math.sin(bob)*.025:0;
-    const sl=S.carrySlide||0;L.g.rotation.set(-Math.PI/2+.08,y,0);L.g.position.set(P.x-fx*(.85-sl)+rx*.42,1.12+bb,P.z-fz*(.85-sl)+rz*.42);}
+    L.g.scale.set(1,1,.18);
+    if(S.carryUp){const us=upSpot(P.x,P.z,y)||S.lastUp||[P.x,P.z];S.lastUp=us;const [ux,uz]=us;L.g.rotation.set(-.04,y,0);L.g.position.set(ux,.22+bb,uz);}
+    else{const sl=S.carrySlide||0;L.g.rotation.set(-Math.PI/2+.08,y,0);L.g.position.set(P.x-fx*(.85-sl)+rx*.42,1.12+bb,P.z-fz*(.85-sl)+rz*.42);}}
   S.eyeY=lerp(S.eyeY||1.68,S.onLadder?(lv('tall')?2.36:2.22):1.68,Math.min(1,dt*8));
   {const pulse=1+Math.sin(performance.now()/180)*.25;activeMarks.forEach(m=>m.scale.setScalar(pulse));}
   bob+=moving?dt*spd*2.6:0;
@@ -2316,13 +2354,13 @@ function tick(dt){
   const wiring=interact(dt);
   if(S.phase==='work'){
     let drain=.17*(S.hungover?1.8:1);if(run)drain+=1.3;if(wiring)drain+=tv('knee');
-    S.stamina=Math.max(0,S.stamina-drain*dt);S.time+=dt*TS*(tutPaused()?0:1);tutTick(dt);
+    S.stamina=Math.max(0,S.stamina-drain*dt*(ab('lungs')?0:1)*(db('munch')?1.8:1));S.time+=dt*TS*(tutPaused()?0:1);tutTick(dt);
     if(Math.floor(S.time)%5===0)setSun(S.time,false);
     if(S.stamina<1&&!S.warnedGas){S.warnedGas=true;toast(`You're gassed. ${K('Press V','Tap VAPE')} for a hit.`,'bad');}
     if(S.stamina>20)S.warnedGas=false;
     if(S.time>=900&&!S.warned15){S.warned15=true;say('JAKE','Half hour left. Wrap up and clock out at your truck.',4);}
     if(S.time>=END_T){S.time=END_T;endDay();return;}
-    S.sanity=Math.max(0,S.sanity-tv('radio')*dt);
+    S.sanity=Math.max(0,S.sanity-tv('radio')*dt*(ab('zen')?0:1));highTick(dt);
     if(S.sanity<=0&&!S.snapped){S.snapped=true;moodAdd(-25);S.strikes++;S.sanity=35;jake.stare=6;say('MAX',"JAKE. I SWEAR TO GOD. ...Sorry. I'm good. I'm good.",4);setTimeout(()=>say('JAKE',`Did you just yell at me? Strike ${S.strikes}. Go drink some water.`,4.5),2600);toast('You snapped at Jake. Strike.','bad');if(S.strikes>=3)setTimeout(fired,4500);}
     if(S.sanity>40)S.snapped=false;
     updateSmell(dt,moving);
@@ -2345,7 +2383,7 @@ function tick(dt){
     if(h.kind==='cart'&&view.s==='watching'){caught();}
     else if(h.t>=h.dur){
       if(h.kind==='vape'){S.vapeHits=(S.vapeHits||0)+1;if(!S.borrowVape)S.vape--;S.stamina=Math.min(100,S.stamina+11*(S.tank?1.5:1));exhale(6,0xeef6ff);}
-      else if(h.kind==='cart'){S.cartHits=(S.cartHits||0)+1;if(!S.borrowCart)S.cart--;S.borrowCart=false;S.boost=45;S.stamina=Math.min(100,S.stamina+3);S.sanity=Math.min(100,S.sanity+4);exhale(9,0xe8f5dc);S.smell=32*tv('spray');dropSmell(P.x,P.z,true);toast('Zoned in: wiring 2× faster for 45s. You reek for a bit.','good');}
+      else if(h.kind==='cart'){S.cartHits=(S.cartHits||0)+1;if(!S.borrowCart)S.cart--;S.borrowCart=false;S.stamina=Math.min(100,S.stamina+3);S.sanity=Math.min(100,S.sanity+4);exhale(6+3*Math.min(4,(S.hits||[]).length+1),0xe8f5dc);cartHit();}
       else if(h.kind==='beer'){S.beers--;S.beersTonight++;S.sanity=Math.min(100,S.sanity+15+(guestsHere()?6:0));if(guestsHere()){const nm=pick(Object.keys(guests).filter(k=>guests[k].state!=='away'));if(nm)say(nm,pick(['Cheers bro 🍻','To not being at work.','To Jake\'s boat sinking. Kidding. Mostly.']),2.5);}tone(300,.15,'sine',.04);
         if(S.beersTonight===4)toast('Feeling good. One more and tomorrow hurts.');
         else if(S.beersTonight===5)toast("That's five. You're gonna feel this tomorrow.",'bad');}
@@ -2370,7 +2408,7 @@ function hudUpdate(view){
   setT($('hSanN'),String(Math.round(S.sanity)));$('hSan').style.width=S.sanity+'%';$('hSanBar').classList.toggle('low',S.sanity<25);
   setT($('beltTxt'),carryText());
   setT($('hStamN'),String(Math.round(S.stamina)));$('hStam').style.width=S.stamina+'%';$('hBar').classList.toggle('low',S.stamina<20);
-  const fx=[];if(S.boost>0)fx.push(`<span class="chip zoned">ZONED ${Math.ceil(S.boost)}s</span>`);if(S.hungover&&S.phase==='work')fx.push('<span class="chip hung">HUNGOVER</span>');if(S.stamina<1)fx.push('<span class="chip gassed">GASSED</span>');if(S.smell>0&&S.phase==='work')fx.push(`<span class="chip reek">YOU REEK ${Math.ceil(S.smell)}s</span>`);if(S.sanity<25)fx.push('<span class="chip hung">LOSING IT</span>');
+  const fx=[];if(S.boost>0)fx.push(`<span class="chip zoned">LOCKED IN ×${highStack()} ${Math.ceil(S.boost)}s</span>`);if(S.ab)for(const k in S.ab)if(k!=='lock'&&S.ab[k]>0)fx.push(`<span class="chip zoned">${ABIL[k].n}</span>`);if(db('slow'))fx.push('<span class="chip gassed">SLOW</span>');if(db('forget'))fx.push('<span class="chip gassed">FORGETFUL</span>');if(db('munch'))fx.push('<span class="chip gassed">MUNCHIES</span>');if(S.hungover&&S.phase==='work')fx.push('<span class="chip hung">HUNGOVER</span>');if(S.stamina<1)fx.push('<span class="chip gassed">GASSED</span>');if(S.smell>0&&S.phase==='work')fx.push(`<span class="chip reek">YOU REEK ${Math.ceil(S.smell)}s</span>`);if(S.sanity<25)fx.push('<span class="chip hung">LOSING IT</span>');
   const fxs=fx.join('');if($('hFx')._v!==fxs){$('hFx')._v=fxs;$('hFx').innerHTML=fxs;}
   setT($('iVape'),String(S.vape));setT($('iCart'),String(S.cart));setT($('iBeer'),String(S.beers));
   [...$('hStrikes').children].forEach((el,i)=>el.classList.toggle('on',i<S.strikes));
@@ -2435,8 +2473,9 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='2.8';
+const GAME_VERSION='2.9';
 const PATCHES=[
+  {v:'2.9',title:'Cart stacking + ladder fixes',items:['One cart hit is a light smell that fades fast. Hit it again within about 2 minutes and it stacks, up to ×4. More hits = stronger, longer smell and faster wiring','Hits 2 to 4 each give you a random ability: Eagle Eye (see Jake through walls), Zen (Jake can\'t get to you), Iron Lungs (no stamina drain), Smooth Talker (only nice replies), Zoomies (move faster)','Go past ×4 and you get debuffs: Slow, then Forgetful (you drop stuff, undo wire pulls, blank out), then Munchies (stamina tanks)','Ladders fold up when you carry them and can\'t go through walls, windows or corners anymore','A ladder you set down faces you, the same way it did when you picked it up','Picking up a ladder right next to a wall no longer locks you in place','Brayden and Ethan sit on the couch instead of in it']},
   {v:'2.8',title:'Longer days and your phone',items:['Workdays last about 70% longer, so tickets are actually finishable','At home, press P (or tap PHONE) to text Brayden and Ethan','Invite them over to chill. Ask Brayden for pods or Ethan for the cart and they\'ll bring some. Ask either for beers','They hang on your couch, talk shit about work, and raise your sanity while they\'re there. Drinking with them gives extra sanity','They drink the beer in your fridge. Have less than 2 per person when they show up and they roast you for being broke','They head home when you go to bed']},
   {v:'2.7',title:'Way more talking',items:['Tons of new lines: Jake stories about the boat, truck, fishing and cars, more gossip, more trash talk, more crew chatter, more replies','When Jake is mad, Brayden and Ethan come find you and tell you what he\'s saying about you, plus a tip for calming him down','Mad Jake comes around less, but when he does it\'s only to bitch and mess up your work']},
   {v:'2.6',title:'Jake talks trash',items:['When Jake is your BFF he walks up and bitches about Brayden and Ethan','He slips you $5–15 every time you listen','New replies for gossip: agree with him and he likes you more, defend the guys and he cools off']},
