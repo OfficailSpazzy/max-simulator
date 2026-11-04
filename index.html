@@ -183,6 +183,19 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
 #tutSkip:focus-visible{outline:2px solid var(--tape)}
 #tutObj{display:block;font-size:14px;line-height:1.35;color:var(--bone)}
 .tutorial #toasts{top:calc(env(safe-area-inset-top,0px) + 92px)}
+.mood{width:120px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:4px}
+.mood i{display:block;height:100%;width:50%;transition:width .3s,background .3s}
+.moodtxt{display:block;font-size:9px!important;letter-spacing:.14em;font-weight:600;margin-top:2px}
+#mMood{font-size:10px;font-weight:700;letter-spacing:.08em;background:var(--plate);border:1px solid var(--line);border-radius:999px;padding:4px 9px}
+#mMood:empty{display:none}
+#choices{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 128px);width:min(560px,calc(100vw - 32px));display:grid;grid-template-columns:1fr 1fr;gap:6px;pointer-events:auto;z-index:6}
+#choices button{display:flex;align-items:center;gap:8px;text-align:left;background:var(--plate);border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:4px;padding:8px 10px;font-size:12px;line-height:1.3;cursor:pointer;color:var(--bone);backdrop-filter:blur(4px)}
+#choices button.neg{border-left-color:var(--danger)}
+#choices button:hover,#choices button:focus-visible{background:rgba(40,38,30,.95);outline:none;border-color:var(--tape)}
+#choices kbd{flex:none;display:grid;place-items:center;width:18px;height:18px;border:1px solid var(--line);border-radius:3px;font-size:10px;color:var(--tape)}
+.touch #choices kbd{display:none}
+.touch #choices{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 176px);width:calc(100vw - 16px);max-width:460px;gap:5px}
+.touch #choices button{padding:9px 10px;font-size:12px;min-height:42px}
 /* ---------- phone layout ---------- */
 #mhud{display:none}
 .touch #mhud{display:flex;flex-direction:column;gap:6px;position:absolute;top:calc(env(safe-area-inset-top,0px) + 6px);left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px))}
@@ -242,6 +255,7 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
 .touch.tutorial #talk{top:calc(env(safe-area-inset-top,0px) + 150px)}
 .touch.tutorial #toasts{top:auto}
 @media (orientation:landscape) and (max-height:500px){
+  .touch #choices{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 104px);width:min(440px,calc(100vw - 360px))}
   .touch #tut{top:calc(env(safe-area-inset-top,0px) + 50px);width:min(360px,calc(100vw - 400px))}
   .touch.tutorial #talk{top:auto}
   .touch #talk{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:min(420px,calc(100vw - 340px))}
@@ -274,7 +288,7 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
       <div class="mmeters"><div class="mm st" title="Stamina"><span>⚡</span><div><i id="mSt"></i></div></div><div class="mm sa" title="Sanity"><span>☺</span><div><i id="mSa"></i></div></div></div>
       <div class="mright"><span id="mJake">JAKE</span><span class="meye" id="mEye"></span><span class="mstr" id="mStr"><i></i><i></i><i></i></span></div>
     </div>
-    <div class="mrow2"><span id="mHold"></span><span id="mFx"></span></div>
+    <div class="mrow2"><span id="mHold"></span><span id="mMood"></span><span id="mFx"></span></div>
   </div>
   <div class="corner tl">
     <div class="plate stats">
@@ -288,7 +302,7 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
     <div class="plate ticket" id="ticket"><button id="ticketHead" type="button"><span>TODAY'S TICKET</span><span id="tSum"></span></button><div id="tList"></div></div>
   </div>
   <div class="corner tr">
-    <div class="plate jake" id="jakeChip"><span class="eye"></span><div><b>JAKE</b><span id="jakeTxt">Coast clear</span></div></div>
+    <div class="plate jake" id="jakeChip"><span class="eye"></span><div><b>JAKE</b><span id="jakeTxt">Coast clear</span><div class="mood"><i id="moodBar"></i></div><span id="moodTxt" class="moodtxt">MEH</span></div></div>
     <div class="plate strikes"><span>STRIKES</span><div id="hStrikes"><i></i><i></i><i></i></div></div>
     <div class="plate belt" id="belt"><span>IN YOUR HANDS</span><b id="beltTxt">nothing</b></div>
     <div class="plate inv"><div><span>VAPE</span><b id="iVape">20</b><kbd>V</kbd></div><div><span>CART</span><b id="iCart">8</b><kbd>C</kbd></div><div><span>BEERS</span><b id="iBeer">6</b><kbd>&nbsp;</kbd></div></div>
@@ -296,6 +310,7 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
   <div id="cross"></div>
   <div id="promptWrap"><div id="prompt"></div><div id="prog"><i></i></div></div>
   <div id="tut" hidden><div class="tuthead"><span id="tutStep">TRAINING</span><button type="button" id="tutSkip">Skip</button></div><b id="tutObj"></b></div>
+  <div id="choices" hidden></div>
   <div id="talk" hidden><b id="talkWho"></b><span id="talkTxt"></span></div>
   <div id="toasts"></div>
   <div id="lockHint" hidden>Click to look around · Esc releases the mouse</div>
@@ -413,7 +428,7 @@ const RENT=45, WAGE=90, BOX_PAY=4, START_T=420, END_T=930, TS=1.45;
 const fresh=()=>({mode:'title',phase:'work',day:1,money:120,stamina:85,strikes:0,vape:20,cart:8,beers:6,
   hungover:false,boost:0,time:START_T,kit:false,boots:false,tank:false,ticket:[],beersTonight:0,
   boxPay:0,bonus:0,fines:0,wiredToday:0,totalWired:0,siteDone:false,warned15:false,warnedGas:false,jakeNext:35,hit:null,
-  sanity:80,smell:0,inv:{gang:0,oct:0,panel:0,w14:0,w12:0},snapped:false,tl:{},tut:-1,tutDone:false,hasVape:true,hasCart:true});
+  sanity:80,smell:0,inv:{gang:0,oct:0,panel:0,w14:0,w12:0},snapped:false,tl:{},tut:-1,tutDone:false,hasVape:true,hasCart:true,mood:0,job:null});
 let S=fresh();
 const P={x:0,z:22,yaw:0,pitch:0};
 
@@ -594,7 +609,7 @@ function setSun(t,night){
  [[11,14,2.2,1.3],[13,27,1.6,1],[-8,-2.2,1.8,.9],[23,7.5,1.3,.8],[-29,-1,2,1.2],[2,8.2,1.4,.7]].forEach(([x,z,a,b])=>{const m=new THREE.MeshStandardMaterial({color:LIN(0x2f271e),roughness:.04,metalness:.1,alphaMap:pud,transparent:true,depthWrite:false});
    const p=new THREE.Mesh(new THREE.CircleGeometry(1,28),m);p.rotation.x=-Math.PI/2;p.scale.set(a,b,1);p.position.set(x,.025,z);p.receiveShadow=true;scene.add(p);});drive.rotation.x=-Math.PI/2;drive.position.set(12,.011,21);drive.receiveShadow=true;scene.add(drive);}
 
-const UNITS_FOOT=[[-24.4,-12.6,-14.4,-4.6],[-5.9,5.9,-14.4,-4.6],[12.6,24.4,-14.4,-4.6],[-24.4,-15.6,9.6,17.4],[-14.9,-6.1,9.6,17.4],[-5.4,3.4,9.6,17.4],[4.1,12.9,9.6,17.4],[13.6,22.4,9.6,17.4],[17,32,1.5,4.5],[3.5,9.5,23,26]];
+const UNITS_FOOT=[[-24.4,-12.6,-14.4,-4.6],[-5.9,5.9,-14.4,-4.6],[12.6,24.4,-14.4,-4.6],[-24.4,-15.6,9.6,17.4],[-14.9,-6.1,9.6,17.4],[-5.4,3.4,9.6,17.4],[4.1,12.9,9.6,17.4],[13.6,22.4,9.6,17.4],[17,32,1.5,4.5],[3.5,9.5,23,26],[-20,-7.5,24,27]];
 /* ================= GRASS ================= */
 const grassTime={value:0};let grassMeshes=[];
 {const gt=ctex(128,128,(x,w,h)=>{x.clearRect(0,0,w,h);for(let i=0;i<46;i++){const bx=rand(6,w-6),bh=rand(40,124),lean=rand(-16,16);
@@ -1095,6 +1110,32 @@ function neighborHouse(x,z,ry,k){const g=new THREE.Group();g.position.set(x,0,z)
   for(let b2=0;b2<4;b2++)addM(sphG(.45,12,8),std(0x3d5a2e,{r:.95}),g,1+b2*1.1,.3,D/2+.5,1,.7,1);
 }
 [[-26,-34,0],[-8,-36,0],[11,-34,0],[29,-35,0],[-48,6,Math.PI/2],[48,2,-Math.PI/2],[-46,-14,Math.PI/2]].forEach(([x,z,ry],k)=>neighborHouse(x,z,ry,k));
+
+/* ================= JAKE'S TRUCK + BOAT ================= */
+const JRIG={x:-15,z:25.5};
+{const g=new THREE.Group();g.position.set(JRIG.x,0,JRIG.z);scene.add(g);
+ const tr=makePickup(0x1d3a5e);tr.position.set(4.4,0,0);tr.scale.setScalar(1.05);g.add(tr);
+ const lift=std(0x111111,{r:.6});[[2.75,1],[2.75,-1],[6.15,1],[6.15,-1]].forEach(([x,s])=>addM(RB(.35,.16,.25,.05),lift,g,x,.62,s*.82));
+ addM(RB(.9,.3,.06,.03),std(0x0f0f10,{r:.5}),g,4.4+1.7,1.9,0,1,1,1,0,0,0);for(let k=0;k<4;k++)addM(new THREE.CylinderGeometry(.04,.04,.06,10),std(0xfff2b0,{e:0xffe080,ei:.8}),g,4.4+1.72,1.9,-.33+k*.22,1,1,1,0,0,Math.PI/2);
+ const frame=std(0x9aa0a6,{m:.8,r:.35});[-.55,.55].forEach(z=>addM(RB(5.4,.1,.1,.02),frame,g,-1.2,.5,z));addM(RB(1.3,.08,.08,.02),frame,g,1.85,.5,0);
+ [[-1.3,.78],[-1.3,-.78]].forEach(([x,z])=>{wheel(g,x,.33,z,.78);});
+ for(let k=0;k<5;k++)addM(RB(.12,.06,1.3,.02),std(0x3a2a1a,{r:.9}),g,-3.2+k*.9,.58,0);
+ const hull=std(0xf4f2ec,{r:.18,m:.1}),blue=std(0x1f4fb0,{r:.25,m:.2}),red=std(0xc8281f,{r:.3});
+ const hs=new THREE.Shape();hs.moveTo(-2.6,0);hs.lineTo(1.6,0);hs.quadraticCurveTo(2.7,.05,3.0,.85);hs.lineTo(-2.6,.85);hs.lineTo(-2.6,0);
+ const hg=new THREE.ExtrudeGeometry(hs,{depth:1.7,bevelEnabled:true,bevelThickness:.15,bevelSize:.12,bevelSegments:4,curveSegments:16});hg.translate(0,0,-.85);
+ const H=addM(hg,hull,g,-1.25,.68,0);occluders.push(H);
+ addM(RB(5.3,.08,1.92,.04),blue,g,-.95,1.1,0);addM(RB(5.6,.05,2.05,.02),red,g,-.95,1.02,0);
+ addM(RB(4.2,.05,1.55,.03),std(0x8a8a86,{r:.9}),g,-1.3,1.55,0);
+ addM(RB(.7,.35,1.2,.08),std(0xe8e6df,{r:.3}),g,-.5,1.8,0);addM(RB(.04,.42,1.2,.01),std(0x26313a,{r:.05,m:.6,transparent:true,opacity:.8}),g,-.18,2.12,0,1,1,1,0,0,-.35);
+ [-.4,.4].forEach(z=>{addM(RB(.5,.12,.45,.06),std(0x2a2b2e,{r:.8}),g,-1.6,1.68,z);addM(RB(.12,.5,.45,.05),std(0x2a2b2e,{r:.8}),g,-1.85,1.95,z);});
+ addM(RB(.4,.7,.5,.12),std(0x1b1c1f,{r:.35,m:.4}),g,-3.95,1.55,0);addM(RB(.6,.5,.6,.12),std(0x1b1c1f,{r:.35,m:.4}),g,-4.05,2.0,0);addM(RB(.1,.9,.16,.04),std(0x2a2b2e,{r:.5}),g,-4.05,.95,0);
+ const nt=ctex(512,96,(x)=>{x.clearRect(0,0,512,96);x.fillStyle='#1f4fb0';x.font='italic 900 64px "Big Shoulders Display", Impact, sans-serif';x.fillText('REEL JAKE',12,70);},1,1);
+ [1,-1].forEach(s=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(2.4,.45),new THREE.MeshStandardMaterial({map:nt,transparent:true,roughness:.4}));p.position.set(.0,1.0,s*(1.03));if(s<0)p.rotation.y=Math.PI;g.add(p);});
+ for(let k=0;k<3;k++)addM(new THREE.CylinderGeometry(.012,.006,1.7,6),std(0x222222,{r:.4}),g,-2.2+k*.25,2.3,.7,1,1,1,0,0,.35+k*.1);
+ addCol(JRIG.x-4.5,JRIG.x+7.2,JRIG.z-1.15,JRIG.z+1.15);g.traverse(c=>{if(c.isMesh)occluders.push(c);});
+ const hit=new THREE.Mesh(geo,M.hit);hit.scale.set(6,2,2.6);hit.position.set(-1.2,1.2,0);g.add(hit);hit.userData.i={type:'jakeboat'};inter.push(hit);
+ const tag=canvasSprite("JAKE'S BOAT",'#f2ead8',{sx:1.3});tag.position.set(-1,3,0);g.add(tag);
+ JRIG.stand=[JRIG.x-1,JRIG.z-1.8];}
 
 /* ================= LADDERS ================= */
 const ladders=[];
@@ -1641,17 +1682,104 @@ function jakeWalkUp(){
   if(jake.sniff&&inJohn){jake.sniff=false;say('JAKE',"Whoever's in there stinks. I know it's you, Max. I'm not opening that door.",4.5);S.sanity=Math.max(0,S.sanity-5);return;}
   if(jake.sniff){jake.sniff=false;if(S.smell>0){caught(true);return;}say('JAKE',pick(["Something smells like a skunk got into a dispensary. Must be Brayden.","You smell that? ...Huh. Never mind. Get back to work.","I'm gonna find out who's smoking on my site. Not saying it's you. Yet."]),4.5);S.sanity=Math.max(0,S.sanity-4);return;}
   if(inJohn){say('JAKE',"Max. You've been in there twenty minutes. I can hear you breathing.",4.5);grumble();S.sanity=Math.max(0,S.sanity-6);return;}
+  if(moodWalkUp()){showChoices();return;}
   const pool=[];JAKE_WALKUP.forEach(l=>{if(l.need&&!l.need())return;for(let k=0;k<(l.w||1);k++)pool.push(l);});
   const l=pick(pool);let txt=l.t;if(txt.includes('{u}')){const ui=nextUnit();txt=txt.replace('{u}',ui!=null?UNITS[ui].name:'another unit');}
   say('JAKE',txt,5);if(l.mad)grumble();S.sanity=Math.max(0,S.sanity-(l.mad?9:4)*tv('plugs'));
   if(l.fx){const r=l.fx();if(r)setTimeout(()=>toast(r,'bad'),400);}
+  showChoices();
 }
+
+/* ================= REPLY CHOICES ================= */
+const RESP_POS=[
+  {t:"Best boat in America. Not even close.",m:8,r:"See? Somebody on this site gets it."},
+  {t:"Yes sir. On it.",m:4,r:"That's what I like to hear."},
+  {t:"Wait, tell me more about the truck.",m:9,r:"Oh buddy. Pull up a bucket.",fx:()=>{S.time+=12;return 'Jake talked your ear off (−12 min)';}},
+  {t:"You're right. I'll fix it.",m:5,r:"Good. Do it right this time."},
+  {t:"Want a hit of my vape?",m:7,need:()=>S.hasVape&&S.vape>0,r:"...Mango? Don't mind if I do.",fx:()=>{S.vape--;return '−1 vape hit';}},
+  {t:"Fishing this weekend? I'm in.",m:6,r:"Now we're talking. Bring nightcrawlers."},
+  {t:"That V8 talk was actually facts.",m:6,r:"Finally, a man of culture."},
+];
+const RESP_NEG=[
+  {t:"Cool story.",m:-5,san:3,r:"...Wow. Okay."},
+  {t:"Nobody cares about your boat, Jake.",m:-14,san:8,r:"EVERYBODY cares about my boat."},
+  {t:"Can you leave me alone? I'm working.",m:-7,san:4,r:"Oh I'll leave. I'll leave you a bigger ticket."},
+  {t:"Your truck's compensating for something.",m:-18,san:10,r:"You're done talking. Get back to work."},
+  {t:"Mm-hm. (keep working)",m:-3,san:2,r:"Are you even listening to me?"},
+  {t:"I'd rather be fired.",m:-20,san:12,r:"Keep talking and you will be."},
+  {t:"Didn't you tell me that yesterday?",m:-6,san:4,r:"And I'll tell you again tomorrow."},
+];
+function showChoices(){if(S.tut>=0||S.phase!=='work')return;const s=S.sanity,neg=s>=75?1:s>=50?2:s>=25?3:4;
+  const pick2=(arr,n)=>{const a=arr.filter(r=>!r.need||r.need()).slice();const out=[];while(out.length<n&&a.length)out.push(a.splice((Math.random()*a.length)|0,1)[0]);return out;};
+  const list=[...pick2(RESP_NEG,neg).map(r=>({...r,neg:1})),...pick2(RESP_POS,4-neg)];for(let i=list.length-1;i>0;i--){const k=(Math.random()*(i+1))|0;[list[i],list[k]]=[list[k],list[i]];}
+  S.choice={list,t:0};const el=$('choices');el.innerHTML=list.map((r,i)=>`<button type="button" class="${r.neg?'neg':'pos'}" data-i="${i}"><kbd>${i+1}</kbd>${r.t}</button>`).join('');el.hidden=false;}
+function closeChoices(){S.choice=null;$('choices').hidden=true;}
+function choose(i){const c=S.choice;if(!c||!c.list[i])return;const r=c.list[i];closeChoices();
+  say('MAX',r.t,1.6);setTimeout(()=>{say('JAKE',r.r,3.5);if(r.neg)grumble();},1300);
+  moodAdd(r.m);toast(`Jake ${r.m>0?'+':'−'}${Math.abs(r.m)}`+(r.san?` · +${r.san} sanity`:''),r.m>0?'good':'bad');
+  if(r.san)S.sanity=Math.min(100,S.sanity+r.san);if(r.fx){const x=r.fx();if(x)setTimeout(()=>toast(x,'bad'),500);}
+  jake.talk=4;jake.mode='talk';tone(r.m>0?660:220,.06,'triangle',.04);}
+function choiceTick(dt){const c=S.choice;if(!c)return;c.t+=dt;jake.mode='talk';jake.talk=Math.max(jake.talk,.6);talkTimer=Math.max(talkTimer,.6);
+  const dd=Math.hypot(P.x-jake.g.position.x,P.z-jake.g.position.z);
+  if(dd>5){closeChoices();say('JAKE',"Oh, walking away while I'm talking? Real nice, Max.",3.5);moodAdd(-8,'walked off on him');}
+  else if(c.t>14){closeChoices();say('JAKE',"Hello? Earth to Max. Forget it.",3);moodAdd(-4);}}
+$('choices').addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(b)choose(+b.dataset.i);});
+$('choices').addEventListener('pointerdown',e=>e.stopPropagation());
+
+/* ================= JAKE MOOD ================= */
+const MOODT=[[-100,'PISSED','#ff4a2b'],[-55,'ANNOYED','#ff8a1f'],[-20,'MEH','#a39c8b'],[25,'COOL WITH YOU','#8be26a'],[65,'BFF','#ffc61a']];
+const moodTier=()=>{let t=MOODT[0];for(const m of MOODT)if(S.mood>=m[0])t=m;return t;};
+const isBFF=()=>S.mood>=65,isPissed=()=>S.mood<-55,isAnnoyed=()=>S.mood<-20;
+function moodAdd(n,why){const before=moodTier()[1];S.mood=clamp(S.mood+n,-100,100);const after=moodTier()[1];
+  if(why&&Math.abs(n)>=5)toast(`Jake ${n>0?'+':'−'}${Math.abs(n)} · ${why}`,n>0?'good':'bad');
+  if(before!==after){const up=n>0;setTimeout(()=>toast(up?`Jake is now ${after==='BFF'?'your BFF 🤝':after.toLowerCase()}`:`Jake is now ${after.toLowerCase()}`,up?'good':'bad'),700);}}
+const BFF_LINES=[
+  {t:"Max! My guy. You're the only one on this site that knows what he's doing.",fx:()=>{S.sanity=Math.min(100,S.sanity+10);return '+10 sanity';}},
+  {t:"Here, take a pod. On me. Don't tell Brayden, he'll want one.",need:()=>S.hasVape,fx:()=>{S.vape+=6;return '+6 vape hits from Jake';}},
+  {t:"Twenty bucks for lunch. You earned it. Get something with meat in it.",fx:()=>{S.money+=20;return '+$20 from Jake';}},
+  {t:"Gimme that, I'll knock one out for you. Go take five.",need:()=>!!ticketBox(),fx:()=>{const b=ticketBox();setMounted(b,true);finishBox(b);renderTicket();return `Jake wired a ${LABELS[b.kind]} in ${UNITS[b.ui].name} for you`;}},
+  {t:"Take a breather. Seriously. Sit on a bucket for a minute.",fx:()=>{S.stamina=Math.min(100,S.stamina+30);return '+30 stamina';}},
+  {t:"You gotta come out on the boat this weekend. I'll let you drive it. Okay, I'll let you sit in it."},
+  {t:"Saturday I'm fishing the north cove. You're coming. Bring snacks, I'll bring the best boat in America."},
+  {t:"If Brayden and Ethan were half as good as you I'd be retired on a lake by now."},
+  {t:"I'm telling the GC you're the best electrician I got. Because you are. Don't let it go to your head."},
+];
+const PISSED_LINES=[
+  {t:"Are you serious with these boxes? A raccoon could mount straighter than that.",mad:1},
+  {t:"I've seen better wire pulls from a guy who'd never seen a wire.",mad:1},
+  {t:"You know what I love about you? Nothing. Get back to work.",mad:1},
+  {t:"My boat has more work ethic than you and it sits in a driveway.",mad:1},
+  {t:"Who taught you to strap like that? Was it Brayden? It was Brayden, wasn't it.",mad:1},
+  {t:"I'm ripping that out. And that one. Do it right this time.",mad:1,w:3,need:()=>doneTicketBoxes().length>1,fx:()=>{const a=doneTicketBoxes();for(let k=0;k<2&&a.length;k++){const b=a.splice((Math.random()*a.length)|0,1)[0];ripOut(b);}renderTicket();return 'Jake ripped out 2 of your boxes';}},
+  {t:"Docking you twenty. For how you're standing. Yeah, that.",mad:1,w:2,fx:()=>{S.money-=20;S.fines+=20;return '−$20 for "how you\'re standing"';}},
+  {t:"Drop what you're doing. You're helping me with my boat. Now.",mad:1,w:3,need:()=>!S.job&&S.tut<0&&S.time<870,fx:()=>{startJakeJob();return null;}},
+  {t:"Ticket just got bigger. You love work, right? Throw {u} on there.",mad:1,w:2,need:()=>nextUnit()!=null&&S.time<780,fx:()=>{const ui=nextUnit();S.ticket.push(ui);renderTicket();return `${UNITS[ui].name} added to your ticket`;}},
+];
+const ticketBox=()=>{let best=null,bd=1e9;boxes.forEach(b=>{if(b.done||!S.ticket.includes(b.ui)||b.kind==='panel'||b.claimed)return;const p=b.group?b.group.position:b.mesh.position,d=Math.hypot(p.x-P.x,p.z-P.z);if(d<bd){bd=d;best=b;}});return best;};
+const JOBS=[["Help me wash my boat. It's dusty. It's never dusty. Come on.","Scrub Jake's boat"],["Help me load the boat. No, the right way. MY way.","Load Jake's boat"],["Come polish my truck's bumper. Someone breathed on it.","Polish Jake's truck"]];
+function startJakeJob(){const j=pick(JOBS);S.job={t:0,prog:0,dead:45,label:j[1]};jake.mode='guide';jake.task=null;jake.talk=0;jake.goTo(JRIG.stand[0]+1.6,JRIG.stand[1]+.2);S.tutGuide=null;
+  setTimeout(()=>say('JAKE',j[0],5),5200);toast("Jake is pulling you off the job. Go to his boat.",'bad');}
+function endJakeJob(ok){const j=S.job;S.job=null;jake.mode='patrol';jake.wait=2;
+  if(ok){S.time=Math.min(END_T-5,S.time+55);say('JAKE',pick(["See? That wasn't so bad. Now go finish your ticket. You're behind.","Perfect. Best boat in America, now even shinier. Back to work.","Good. Now you're an hour behind. Not my problem."]),5);moodAdd(8,'helped with his boat');toast('That took about an hour of your day.','bad');}
+  else{say('JAKE',"Oh, too busy to help? I'll remember that.",4);moodAdd(-12,'ignored him');S.money-=20;S.fines+=20;toast('−$20 for blowing off Jake','bad');}
+  if(S.tut<0)hideTut();}
+function jobTick(dt){const j=S.job;if(!j)return;j.t+=dt;$('tut').hidden=false;$('tutSkip').hidden=true;setT($('tutStep'),"JAKE NEEDS YOU");
+  const near=Math.hypot(P.x-JRIG.stand[0],P.z-JRIG.stand[1])<3.2;
+  setT($('tutObj'),near?`${j.label}: hold ${K('E','USE')} on the boat (${Math.round(j.prog*100)}%)`:`${j.label}. Get to the boat by the entrance (${Math.max(0,Math.ceil(j.dead-j.t))}s)`);
+  tutMark.visible=true;tutMark.position.set(JRIG.x-1,2.7+Math.sin(performance.now()/260)*.08,JRIG.z);
+  if(!near&&j.t>j.dead)endJakeJob(false);}
+function moodWalkUp(){
+  if(isBFF()){const pool=BFF_LINES.filter(l=>!l.need||l.need());const l=pick(pool);say('JAKE',l.t,5);S.sanity=Math.min(100,S.sanity+3);if(l.fx){const r=l.fx();if(r)setTimeout(()=>toast(r,'good'),400);}return true;}
+  if(isPissed()||(isAnnoyed()&&Math.random()<.55)){const pool=[];PISSED_LINES.forEach(l=>{if(l.need&&!l.need())return;for(let k=0;k<(l.w||1);k++)pool.push(l);});const l=pick(pool);
+    let txt=l.t;if(txt.includes('{u}')){const ui=nextUnit();txt=txt.replace('{u}',ui!=null?UNITS[ui].name:'another unit');}
+    say('JAKE',txt,5);grumble();S.sanity=Math.max(0,S.sanity-(isPissed()?12:9)*tv('plugs'));if(l.fx){const r=l.fx();if(r)setTimeout(()=>toast(r,'bad'),400);}return true;}
+  return false;}
 
 /* ================= INPUT ================= */
 const keys={};const input={use:false,useEdge:false,vape:false,cart:false};
 let tUse=false,runLatch=false,prevUse=false;let joy={x:0,y:0};
 addEventListener('keydown',e=>{keys[e.code]=true;if(S.mode!=='play')return;
-  if(e.code==='KeyG')input.grab=true;if(e.code==='KeyV')input.vape=true;if(e.code==='KeyC')input.cart=true;
+  if(S.choice&&/^(Digit|Numpad)[1-4]$/.test(e.code)){choose(+e.code.slice(-1)-1);return;}if(e.code==='KeyG')input.grab=true;if(e.code==='KeyV')input.vape=true;if(e.code==='KeyC')input.cart=true;
   if(e.code==='Tab'||e.code==='KeyT'){e.preventDefault();toggleTicket();}});
 addEventListener('keyup',e=>{keys[e.code]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;tUse=false;});
@@ -1722,6 +1850,7 @@ function morning(first){
   const crew=[brayden,ethan].filter(n=>n.assign!=null).map(n=>`${n.name[0]+n.name.slice(1).toLowerCase()} has ${UNITS[n.assign].name}`).join(', ');
   say('JAKE',(first?`Morning, Max. New building. Your ticket: ${names}. Boxes and wire are in the supply trailer. Kitchens get 12/2, everything else 14/2.`:`Morning. Your ticket: ${names}. Every box. Let's go.`)+(crew?` ${crew}.`:''),7);
   S.sanity=Math.max(S.sanity,20);
+  S.forgiven=false;S.job=null;S.mood=Math.round(S.mood*.85);
   if(first&&!S.tutDone&&S.day===1)startTut();else hideTut();
   if(S.hungover)setTimeout(()=>{if(S.phase==='work')say('ETHAN','Bro you look ROUGH. How many did you have?',3.5);},6500);
   S.mode='play';save();
@@ -1737,11 +1866,16 @@ function finishBox(b,npc){
     if(npc&&!u.paid){u.paid=true;toast(`${npc.name[0]+npc.name.slice(1).toLowerCase()} finished ${u.name}`);}
     if(!u.paid){u.paid=true;const bon=u.type==='house'?80:40;S.money+=bon;S.bonus+=bon;
       toast(`${u.name} wired up. +$${bon} bonus`,'good');tone(660,.12,'triangle',.06);setTimeout(()=>tone(990,.18,'triangle',.06),110);}
+    if(!npc&&!u.mooded){u.mooded=true;moodAdd(4);}
+    if(!npc&&S.ticket.every(unitDone)){moodAdd(10,'ticket done');}
     if(!npc&&S.ticket.every(unitDone))say('JAKE','Ticket\'s done? Huh. Okay. You can clock out at your truck.',4);
     if(!S.siteDone&&UNITS.every((_,i)=>unitDone(i))){S.siteDone=true;S.money+=250;S.bonus+=250;S.strikes=Math.max(0,S.strikes-1);toast('Whole building wired! +$250 and a strike cleared','good');}}
   renderTicket();
 }
 function caught(smelled){
+  closeChoices();
+  if(isBFF()&&!S.forgiven){S.forgiven=true;S.hit=null;S.smell=0;jake.stare=5;jake.mode='talk';say('JAKE',smelled?"...I didn't smell anything. But air out before somebody else does.":"...I didn't see that. Put it away before somebody else does.",5);moodAdd(-30,'covered for you');return;}
+  moodAdd(-30);
   S.hit=null;S.strikes++;S.sanity=Math.max(0,S.sanity-15);S.smell=0;S.money-=50;S.fines+=50;const took=Math.min(S.cart,3);S.cart-=took;
   jake.stare=14;jake.path=[];jake.mode='talk';
   say('JAKE',(smelled?`You REEK, Max. I followed the smell right to you. Strike ${S.strikes}.`:pick(LINES.CAUGHT).replace('{n}',S.strikes))+(took?` I'm keeping ${took} hits of that too.`:''),4.5);
@@ -1755,10 +1889,10 @@ function fired(){S.mode='fired';unlock();
   $('firedLedger').innerHTML=`<div><span>Days on the job</span><span>${S.day}</span></div><div><span>Boxes wired</span><span>${S.totalWired}</span></div><div class="tot"><span>Money left</span><span>$${S.money}</span></div>`;
   $('fired').hidden=false;clearSave();}
 function endDay(){
-  S.mode='summary';unlock();const done=S.ticket.every(unitDone);
-  S.money+=WAGE;let dock=0;if(!done){dock=40;S.money-=dock;}
+  closeChoices();S.mode='summary';unlock();const done=S.ticket.every(unitDone);
+  S.money+=WAGE;let dock=0;if(!done&&!isBFF()){dock=isPissed()?70:40;S.money-=dock;}moodAdd(done?6:-15);if(S.job)endJakeJob(false);
   $('sumTitle').textContent=`Day ${S.day} wrapped`;
-  $('sumJake').textContent=done?'Jake: "Not bad. Don\'t let it go to your head."':'Jake: "Ticket\'s not done. I\'m docking you. Do better tomorrow."';
+  $('sumJake').textContent=done?(isBFF()?'Jake: "That\'s my guy. Boat this weekend, I\'m serious."':isPissed()?'Jake: "Finally. Took you long enough."':'Jake: "Not bad. Don\'t let it go to your head."'):(isBFF()?'Jake: "Don\'t sweat it. Finish it tomorrow, I got you."':isPissed()?'Jake: "Not done AGAIN. I\'m docking you extra."':'Jake: "Ticket\'s not done. I\'m docking you. Do better tomorrow."');
   $('sumLedger').innerHTML=[
     ['Ticket',done?'Complete':'Incomplete',''],['Boxes wired',S.wiredToday,''],['Box pay','+$'+S.boxPay,'pos'],['Unit bonuses','+$'+S.bonus,'pos'],
     ['Day wage','+$'+WAGE,'pos'],...(dock?[['Docked by Jake','−$'+dock,'neg']]:[]),...(S.fines?[['Fines','−$'+S.fines,'neg']]:[]),['Balance','$'+S.money,'tot']]
@@ -1824,11 +1958,11 @@ $('btnRestart').addEventListener('click',()=>{$('fired').hidden=true;S=fresh();r
 
 /* ================= SAVE ================= */
 const SAVE_KEY='max-simulator-v4';
-function snapshot(){return {hasVape:S.hasVape,hasCart:S.hasCart,tutDone:S.tutDone||S.tut>=0,tl:S.tl,day:S.day,money:S.money,stamina:S.stamina,sanity:S.sanity,inv:S.inv,strikes:S.strikes,vape:S.vape,cart:S.cart,beers:S.beers,hungover:S.hungover,kit:S.kit,boots:S.boots,tank:S.tank,totalWired:S.totalWired,siteDone:S.siteDone,crew:[brayden.assign,ethan.assign],done:boxes.map(b=>b.done?2:b.mounted?1:0)};}
+function snapshot(){return {mood:S.mood,hasVape:S.hasVape,hasCart:S.hasCart,tutDone:S.tutDone||S.tut>=0,tl:S.tl,day:S.day,money:S.money,stamina:S.stamina,sanity:S.sanity,inv:S.inv,strikes:S.strikes,vape:S.vape,cart:S.cart,beers:S.beers,hungover:S.hungover,kit:S.kit,boots:S.boots,tank:S.tank,totalWired:S.totalWired,siteDone:S.siteDone,crew:[brayden.assign,ethan.assign],done:boxes.map(b=>b.done?2:b.mounted?1:0)};}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot()));}catch(e){}}
 function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
 function loadSave(){try{const r=localStorage.getItem(SAVE_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
-function applySave(d){S=fresh();for(const k of ['day','money','stamina','sanity','strikes','vape','cart','beers','hungover','kit','boots','tank','totalWired','siteDone'])if(k in d)S[k]=d[k];if(d.inv)S.inv={...S.inv,...d.inv};S.tutDone=d.tutDone!==false;S.hasVape=d.hasVape!==false;S.hasCart=d.hasCart!==false;if(d.tl)S.tl={...d.tl};if(d.crew){brayden.assign=d.crew[0];ethan.assign=d.crew[1];}
+function applySave(d){S=fresh();for(const k of ['day','money','stamina','sanity','strikes','vape','cart','beers','hungover','kit','boots','tank','totalWired','siteDone'])if(k in d)S[k]=d[k];if(d.inv)S.inv={...S.inv,...d.inv};S.tutDone=d.tutDone!==false;S.hasVape=d.hasVape!==false;S.mood=+d.mood||0;S.hasCart=d.hasCart!==false;if(d.tl)S.tl={...d.tl};if(d.crew){brayden.assign=d.crew[0];ethan.assign=d.crew[1];}
   resetSite();if(Array.isArray(d.done)&&d.done.length===boxes.length)d.done.forEach((v,i)=>{const b=boxes[i];if(v>=1)setMounted(b,true);if(v>=2)showDone(b);});
   UNITS.forEach((u,i)=>{if(unitDone(i)){u.paid=true;u.boxes.forEach(x=>{if(x.bulb){x.bulb.material=M.bulbOn;x.glow.visible=true;}});}});}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({save:snapshot(),mode:S.mode}));}catch(e){}
@@ -1889,9 +2023,11 @@ function interact(dt){
           toast(l?`${t.name} upgraded to ${TIER[l+1]}: ${t.eff[l+1]}`:`Bought ${t.name}: ${t.eff[1]}`,'good');save();}}}
     else if(it.type==='storeExit'){msg=`${K('E','USE')} · head home`;if(input.useEdge)goHome();}
     else if(it.type==='clerk'){msg=`${K('E','USE')} · talk to the clerk`;if(input.useEdge)say('CLERK',pick(["Electrical's aisle 12. Everything is aisle 12.","You need help finding anything? Great, me neither.","Contractor discount? Ha. No.","Your boss Jake comes in here. He returns stuff he clearly used.","We close in ten minutes. We always close in ten minutes.","The master tier is worth it. Your boss isn't, but the tools are."]),4);}
+    else if(it.type==='jakeboat'){if(S.job){msg=`${K('Hold E','Hold USE')} · ${S.job.label.toLowerCase()} (${Math.round(S.job.prog*100)}%)`;if(input.use&&!S.hit){S.job.prog+=dt/7;wiring=true;S.tool='pliers';if(Math.random()<dt*5)tone(rand(400,700),.03,'sine',.015);if(S.job.prog>=1)endJakeJob(true);}}
+      else msg=S.phase==='work'?"Jake's boat. Best boat in America, apparently. Don't touch it.":'';}
     else if(it.type==='trailer'){msg=`${K('E','USE')} · grab supplies`;if(input.useEdge){S.mode='supply';unlock();renderSupply();$('supply').hidden=false;}}
     else if(it.type==='npc'){const n=it.npc;msg=`${K('E','USE')} · talk to ${n.name[0]+n.name.slice(1).toLowerCase()}`;
-      if(input.useEdge&&n.mode!=='talk'){n.talk=3.5;say(n.name,pick(LINES[n.name]));}}
+      if(input.useEdge&&n.mode!=='talk'){n.talk=3.5;if(n===jake){const now=S.time;if(now-(S.lastChat||-99)>25){S.lastChat=now;moodAdd(4,'asked about his boat');say('JAKE',pick(isBFF()?["Max! You wanna hear about the boat? Course you do.","My guy. Truck's running great today. Like always."]:isAnnoyed()?["What. What do you want.","Make it quick."]:LINES.JAKE));}else{moodAdd(-2);say('JAKE',"Again? Go work.");}}else say(n.name,pick(LINES[n.name]));}}
     else if(it.type==='truck'){
       const ok=S.ticket.every(unitDone)||S.time>=900;msg=`${K('E','USE')} · clock out and drive home`;
       if(input.useEdge){if(ok)endDay();else say('JAKE',"Where you going? Ticket's not done and it's not 3. Back in there.",3.5);}}
@@ -1982,11 +2118,11 @@ const TUT=[
   mark:()=>tutBase.arrived?[JOHN.x,2.95,JOHN.z]:null,done:()=>tutBase.arrived&&((S.cartHits||0)>tutBase.c||S.strikes>tutBase.s0)},
 ];
 function tutPaused(){return S.tut>=0&&S.tut<=9;}
-function showTut(){const st=TUT[S.tut];$('tut').hidden=false;document.body.classList.add('tutorial');setT($('tutStep'),`TRAINING · ${S.tut+1}/${TUT.length}`);setT($('tutObj'),st.obj());}
-function hideTut(){$('tut').hidden=true;document.body.classList.remove('tutorial');tutMark.visible=false;}
+function showTut(){const st=TUT[S.tut];$('tut').hidden=false;$('tutSkip').hidden=false;document.body.classList.add('tutorial');setT($('tutStep'),`TRAINING · ${S.tut+1}/${TUT.length}`);setT($('tutObj'),st.obj());}
+function hideTut(){if(S.job)return;$('tutSkip').hidden=false;$('tut').hidden=true;document.body.classList.remove('tutorial');tutMark.visible=false;}
 function enterTut(i){S.tut=i;tutT=0;if(i>=TUT.length){finishTut();return;}TUT[i].enter();showTut();tone(660,.07,'triangle',.04);}
 function startTut(){S.tutDone=false;S.hasVape=false;S.hasCart=false;S.jakeNext=1e9;jake.place(RIG.stand[0]-6,RIG.stand[1]+10);enterTut(0);}
-function finishTut(skipped){S.hasVape=true;S.hasCart=true;S.borrowVape=S.borrowCart=false;if(!skipped&&ethan.mode==='talk'){ethan.talk=0;ethan.mode='patrol';ethan.wait=1;}if(!skipped&&S.strikes<=(tutBase.s0??0))setTimeout(()=>{say('ETHAN',"See? Locked in. Keep the cart, I'll grab another. Just keep it to yourself.",5);toast('Unlocked: cart. '+KEY('Press C','Tap CART')+' to lock in. Watch Jake and the smell.','good');},1800);if(!skipped&&S.strikes>(tutBase.s0??S.strikes))setTimeout(()=>say('ETHAN',"Bro. I literally said not in front of Jake.",4),2500);S.tut=-1;S.tutDone=true;S.tutGuide=null;hideTut();S.jakeNext=rand(40,60);if(jake.mode==='guide'){jake.mode='patrol';jake.wait=1;}
+function finishTut(skipped){if(!skipped)moodAdd(10,'finished training');S.hasVape=true;S.hasCart=true;S.borrowVape=S.borrowCart=false;if(!skipped&&ethan.mode==='talk'){ethan.talk=0;ethan.mode='patrol';ethan.wait=1;}if(!skipped&&S.strikes<=(tutBase.s0??0))setTimeout(()=>{say('ETHAN',"See? Locked in. Keep the cart, I'll grab another. Just keep it to yourself.",5);toast('Unlocked: cart. '+KEY('Press C','Tap CART')+' to lock in. Watch Jake and the smell.','good');},1800);if(!skipped&&S.strikes>(tutBase.s0??S.strikes))setTimeout(()=>say('ETHAN',"Bro. I literally said not in front of Jake.",4),2500);S.tut=-1;S.tutDone=true;S.tutGuide=null;hideTut();S.jakeNext=rand(40,60);if(jake.mode==='guide'){jake.mode='patrol';jake.wait=1;}
   [brayden,ethan].forEach(n=>{if(n.mode==='visit'){n.mode='patrol';n.wait=1;n.onArrive=null;}});
   toast(skipped?'Training skipped. The ticket is all yours.':'Training done. The ticket is all yours. Don\'t get caught.','good');save();}
 function tutTick(dt){if(S.tut<0)return;tutT+=dt;const st=TUT[S.tut];if(S.tut<=10||tutBase.called&&!tutBase.arrived)S.jakeNext=Math.max(S.jakeNext,30);if(st.tick)st.tick();
@@ -2052,11 +2188,13 @@ function tick(dt){
     if(S.time>=900&&!S.warned15){S.warned15=true;say('JAKE','Half hour left. Wrap up and clock out at your truck.',4);}
     if(S.time>=END_T){S.time=END_T;endDay();return;}
     S.sanity=Math.max(0,S.sanity-tv('radio')*dt);
-    if(S.sanity<=0&&!S.snapped){S.snapped=true;S.strikes++;S.sanity=35;jake.stare=6;say('MAX',"JAKE. I SWEAR TO GOD. ...Sorry. I'm good. I'm good.",4);setTimeout(()=>say('JAKE',`Did you just yell at me? Strike ${S.strikes}. Go drink some water.`,4.5),2600);toast('You snapped at Jake. Strike.','bad');if(S.strikes>=3)setTimeout(fired,4500);}
+    if(S.sanity<=0&&!S.snapped){S.snapped=true;moodAdd(-25);S.strikes++;S.sanity=35;jake.stare=6;say('MAX',"JAKE. I SWEAR TO GOD. ...Sorry. I'm good. I'm good.",4);setTimeout(()=>say('JAKE',`Did you just yell at me? Strike ${S.strikes}. Go drink some water.`,4.5),2600);toast('You snapped at Jake. Strike.','bad');if(S.strikes>=3)setTimeout(fired,4500);}
     if(S.sanity>40)S.snapped=false;
     updateSmell(dt,moving);
-    S.jakeNext-=dt;
-    if(S.jakeNext<=0&&jake.mode==='patrol'&&jake.talk<=0&&jake.stare<=0){S.jakeNext=rand(55,95);jake.mode='approach';jake.appT=0;jake.repath=0;jake.working=false;toast("Jake's walking over to you…");}
+    S.jakeNext-=dt;jobTick(dt);choiceTick(dt);
+    if(jake.listen&&jake.mode==='talk'){const dd=Math.hypot(P.x-jake.g.position.x,P.z-jake.g.position.z);if(dd>5&&jake.listen.ok){jake.listen.ok=false;say('JAKE',"Oh, walking away while I'm talking? Real nice, Max.",3.5);moodAdd(-8,'walked off on him');}}
+    if(jake.listen&&jake.mode!=='talk'){if(jake.listen.ok)moodAdd(jake.listen.story?5:2,jake.listen.story?'listened to his story':null);jake.listen=null;}
+    if(S.jakeNext<=0&&!S.job&&!S.choice&&jake.mode==='patrol'&&jake.talk<=0&&jake.stare<=0){S.jakeNext=isPissed()?rand(30,45):isAnnoyed()?rand(40,65):isBFF()?rand(65,100):rand(55,95);jake.mode='approach';jake.appT=0;jake.repath=0;jake.working=false;toast("Jake's walking over to you…");}
     npcs.forEach(n=>n.update(dt));
   }
   if(S.boost>0)S.boost=Math.max(0,S.boost-dt);
@@ -2101,6 +2239,8 @@ function hudUpdate(view){
   const fxs=fx.join('');if($('hFx')._v!==fxs){$('hFx')._v=fxs;$('hFx').innerHTML=fxs;}
   setT($('iVape'),String(S.vape));setT($('iCart'),String(S.cart));setT($('iBeer'),String(S.beers));
   [...$('hStrikes').children].forEach((el,i)=>el.classList.toggle('on',i<S.strikes));
+  {const t=moodTier(),pc=(S.mood+100)/2;$('moodBar').style.width=pc+'%';$('moodBar').style.background=t[2];setT($('moodTxt'),t[1]);$('moodTxt').style.color=t[2];
+   if(isTouch){setT($('mMood'),(isBFF()?'🤝 ':isPissed()?'😡 ':isAnnoyed()?'😤 ':'')+'JAKE: '+t[1]);$('mMood').style.borderColor=t[2];$('mMood').style.color=t[2];$('mMood').hidden=S.phase!=='work';}}
   const jc=$('jakeChip');const cls={watching:'watching',near:'near',coming:'near'}[view.s]||'';
   if(jc._c!==cls){jc._c=cls;jc.className='plate jake '+cls;}
   setT($('jakeTxt'),{home:'Off the clock',far:'Far away',hidden:"Can't see you",near:`Nearby · ${Math.round(view.d)}m`,watching:'LOOKING AT YOU',coming:`Walking over · ${Math.round(view.d)}m`}[view.s]);
@@ -2159,8 +2299,10 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='2.3';
+const GAME_VERSION='2.5';
 const PATCHES=[
+  {v:'2.5',title:'Talk back to Jake',items:['When Jake walks up you get 4 replies (keys 1–4, or tap)','Every reply moves his mood. Kissing up makes him like you; mouthing off pisses him off but gives you a little sanity','The lower your sanity, the more of your options are mean ones','Walk away or ignore him and he gets mad']},
+  {v:'2.4',title:'Jake\'s mood',items:['New Jake meter, from Pissed to BFF','Listen to his boat stories, talk to him, finish units and tickets, and help when he asks: he likes you more','Get caught, walk off while he\'s talking, blow him off or snap at him: he gets pissed','BFF Jake brings pods and lunch money, wires boxes for you, covers for you once a day and won\'t dock you','Pissed Jake shit-talks your work, rips out boxes, docks you and pulls you off the job to work on his boat','Jake\'s truck and boat now sit by the entrance']},
   {v:'2.3',title:'Ladder walking',items:['Ladders can\'t clip through walls, framing or people anymore. Carry one into a wall and it slides back on your shoulder','Pick a ladder up with G (GRAB on phones) and carry it on your shoulder. Press again to set it down','E or USE climbs it','While on the ladder, rock side to side (A/D or the stick) to walk it forward like a pro','Pull back to climb down']},
   {v:'2.2',title:'Earn your vape and cart',items:['New players don\'t have a vape or cart at first','Brayden gives you his vape when he catches you gassed','Ethan gives you the cart when he comes over later','Old saves keep both']},
   {v:'2.1',title:'Brayden\'s vape, Ethan\'s cart',items:['Brayden catches you gassed and lets you hit his vape until your stamina is full','Around 11:30 Ethan comes over and offers his cart. It\'ll help you lock in, just be careful of the smell','Borrowed hits don\'t use up your own vape or cart']},
@@ -2214,7 +2356,7 @@ $('btnNew').disabled=false;$('btnNew').textContent=sv?'New game':'Clock in';
 window.__max={get S(){return S;},P,cam:(x,y,z,yaw,pitch)=>{S.mode='cam';vm.visible=false;camera.position.set(x,y,z);camera.rotation.set(pitch,yaw,0);},
   play:(home)=>{$('title').hidden=true;$('hud').hidden=false;morning(true);if(home){$('talk').hidden=true;endDay();goHome();}},
   wireSome:(ui,n)=>{UNITS[ui].boxes.slice(0,n).forEach(b=>{setMounted(b,true);!b.done&&finishBox(b);});},ladders,climb,climbDown,refreshPts,updateLoose,mountSome:(ui,n)=>{UNITS[ui].boxes.slice(0,n).forEach(b=>setMounted(b,true));},
-  tick:(n)=>{for(let i=0;i<n;i++)tick(1/30);},get jake(){return jake;},get npcs(){return npcs;},UNITS,boxes,findPath,isFree,cellOf,setP:(x,z,yaw,pitch)=>{P.x=x;P.z=z;P.yaw=yaw;P.pitch=pitch;},state:()=>S,enterTut,inWall,ladderFootClear,pickUp,setDown,jakeWalkUp,toolStands,TOOLS,clouds:()=>clouds.map(c=>({x:+c.x.toFixed(1),z:+c.z.toFixed(1),op:+c.s.material.opacity.toFixed(2),in:c.inside,max:c.max}))};
+  tick:(n)=>{for(let i=0;i<n;i++)tick(1/30);},get jake(){return jake;},get npcs(){return npcs;},UNITS,boxes,findPath,isFree,cellOf,setP:(x,z,yaw,pitch)=>{P.x=x;P.z=z;P.yaw=yaw;P.pitch=pitch;},state:()=>S,moodAdd,moodWalkUp,startJakeJob,JRIG,enterTut,inWall,ladderFootClear,pickUp,setDown,jakeWalkUp,toolStands,TOOLS,clouds:()=>clouds.map(c=>({x:+c.x.toFixed(1),z:+c.z.toFixed(1),op:+c.s.material.opacity.toFixed(2),in:c.inside,max:c.max}))};
 })();
 
 </script>
