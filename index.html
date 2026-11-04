@@ -173,6 +173,13 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
 .item button{grid-column:2;grid-row:1/3;padding:8px 12px;min-width:74px;border-radius:3px;border:1px solid var(--tape);background:transparent;color:var(--tape);font-weight:600;cursor:pointer;font-variant-numeric:tabular-nums}
 .item button:disabled{border-color:var(--line);color:var(--dim);cursor:not-allowed}
 #fired h2{color:var(--danger);font-size:64px}
+#tut{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);width:min(400px,calc(100vw - 480px));min-width:260px;box-sizing:border-box;background:var(--plate);border:1px solid var(--tape);border-radius:6px;padding:8px 12px 10px;pointer-events:auto;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.tuthead{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+#tutStep{font-size:10px;letter-spacing:.16em;color:var(--tape);font-weight:600}
+#tutSkip{background:none;border:0;color:var(--dim);text-decoration:underline;font-size:11px;cursor:pointer;padding:2px 4px}
+#tutSkip:focus-visible{outline:2px solid var(--tape)}
+#tutObj{display:block;font-size:14px;line-height:1.35;color:var(--bone)}
+.tutorial #toasts{top:calc(env(safe-area-inset-top,0px) + 92px)}
 /* ---------- phone layout ---------- */
 #mhud{display:none}
 .touch #mhud{display:flex;flex-direction:column;gap:6px;position:absolute;top:calc(env(safe-area-inset-top,0px) + 6px);left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px))}
@@ -226,7 +233,13 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
 .touch #btns .big{grid-column:2;grid-row:2/4;align-self:end;width:80px;height:80px;font-size:19px;background:var(--tape);color:var(--ink);border:none;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .bdg{display:none}
 .touch .bdg{display:grid;place-items:center;position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--bone);color:var(--ink);font-family:var(--mono);font-size:10px;font-weight:700;box-sizing:border-box}
+.touch #tut{top:calc(env(safe-area-inset-top,0px) + 84px);width:calc(100vw - 16px);max-width:420px;min-width:0;padding:7px 10px 8px}
+.touch #tutObj{font-size:12.5px}
+.touch.tutorial #talk{top:calc(env(safe-area-inset-top,0px) + 150px)}
+.touch.tutorial #toasts{top:auto}
 @media (orientation:landscape) and (max-height:500px){
+  .touch #tut{top:calc(env(safe-area-inset-top,0px) + 50px);width:min(360px,calc(100vw - 400px))}
+  .touch.tutorial #talk{top:auto}
   .touch #talk{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:min(420px,calc(100vw - 340px))}
   .touch #toasts{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 52px);width:min(320px,calc(100vw - 420px))}
   .touch #btns{grid-template-columns:48px 72px;grid-template-rows:48px 48px 72px;gap:6px}
@@ -278,6 +291,7 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
   </div>
   <div id="cross"></div>
   <div id="promptWrap"><div id="prompt"></div><div id="prog"><i></i></div></div>
+  <div id="tut" hidden><div class="tuthead"><span id="tutStep">TRAINING</span><button type="button" id="tutSkip">Skip</button></div><b id="tutObj"></b></div>
   <div id="talk" hidden><b id="talkWho"></b><span id="talkTxt"></span></div>
   <div id="toasts"></div>
   <div id="lockHint" hidden>Click to look around · Esc releases the mouse</div>
@@ -394,7 +408,7 @@ const RENT=45, WAGE=90, BOX_PAY=4, START_T=420, END_T=930, TS=1.45;
 const fresh=()=>({mode:'title',phase:'work',day:1,money:120,stamina:85,strikes:0,vape:20,cart:8,beers:6,
   hungover:false,boost:0,time:START_T,kit:false,boots:false,tank:false,ticket:[],beersTonight:0,
   boxPay:0,bonus:0,fines:0,wiredToday:0,totalWired:0,siteDone:false,warned15:false,warnedGas:false,jakeNext:35,hit:null,
-  sanity:80,smell:0,inv:{gang:0,oct:0,panel:0,w14:0,w12:0},snapped:false,tl:{}});
+  sanity:80,smell:0,inv:{gang:0,oct:0,panel:0,w14:0,w12:0},snapped:false,tl:{},tut:-1,tutDone:false});
 let S=fresh();
 const P={x:0,z:22,yaw:0,pitch:0};
 
@@ -1413,6 +1427,10 @@ class NPC{
     const p=this.g.position;
     if(this.talk>0||this.stare>0){this.talk=Math.max(0,this.talk-dt);this.stare=Math.max(0,this.stare-dt);this.face(P.x,P.z);this.turn(dt,5);this.anim(dt,false);
       if(this.talk<=0&&this.stare<=0&&this.mode==='talk'){this.mode='patrol';this.wait=rand(1,2.5);}return;}
+    if(this.mode==='visit'){this.repath-=dt;this.appT+=dt;const dp=Math.hypot(P.x-p.x,P.z-p.z);
+      if(dp<2.1){this.path=[];this.mode='talk';this.talk=this.visitTalk||7;const f=this.onArrive;this.onArrive=null;if(f)f();this.anim(dt,false);return;}
+      if(S.phase!=='work'||this.appT>60){this.mode='patrol';this.path=[];this.wait=1;this.onArrive=null;}
+      else if(this.repath<=0){this.repath=.8;this.goTo(P.x,P.z);}}
     if(this.mode==='approach'){this.appT+=dt;this.repath-=dt;const dp=Math.hypot(P.x-p.x,P.z-p.z);
       if(dp<1.9){this.path=[];this.mode='talk';this.talk=5.5;jakeWalkUp();this.anim(dt,false);return;}
       if(this.appT>32||S.phase!=='work'){this.mode='patrol';this.path=[];this.wait=1;}
@@ -1421,7 +1439,7 @@ class NPC{
       if(d<.1){this.path.shift();if(!this.path.length&&this.mode!=='approach'){
         if(this.task){this.working=true;this.task.t=0;this.wait=1e9;}
         else{this.wait=this.isJake?rand(3,7):(this.nextWait??rand(8,18));this.nextWait=null;this.working=!this.isJake&&this.atUnit;}}}
-      else{const sp=this.speed*(this.mode==='approach'?1.2:1),st=Math.min(d,sp*dt);let nx=p.x+dx/d*st,nz=p.z+dz/d*st;[nx,nz]=collideStatic(nx,nz,.2);p.x=nx;p.z=nz;
+      else{const sp=this.speed*(this.mode==='approach'?1.2:this.mode==='visit'?1.8:1),st=Math.min(d,sp*dt);let nx=p.x+dx/d*st,nz=p.z+dz/d*st;[nx,nz]=collideStatic(nx,nz,.2);p.x=nx;p.z=nz;
         this.targetYaw=Math.atan2(dx,dz);this.turn(dt,7);this.anim(dt,true);
         this.stuckT+=dt;if(this.stuckT>1.2){if(Math.hypot(p.x-this.sx,p.z-this.sz)<.15&&this.dest)this.goTo(...this.dest);this.stuckT=0;this.sx=p.x;this.sz=p.z;}
         return;}}
@@ -1429,6 +1447,7 @@ class NPC{
       if(b.done){this.endTask();return;}
       if(tk.t>=(b.mounted?7.5:5.5)){tk.t=0;if(!b.mounted){setMounted(b,true);if(distP(p)<14)tone(150,.06,'square',.03);}else{finishBox(b,this);this.endTask();}}
       return;}
+    if(this.mode==='guide'){this.face(P.x,P.z);this.turn(dt,3.5);this.anim(dt,false);return;}
     this.anim(dt,false);this.wait-=dt;this.lookT-=dt;
     if(this.lookT<=0){this.lookT=rand(1,2.6);const dp=Math.hypot(P.x-p.x,P.z-p.z);
       if(this.isJake&&dp<17&&Math.random()<.4)this.face(P.x,P.z);else if(!this.working)this.targetYaw=this.yaw+rand(-1.8,1.8);}
@@ -1680,6 +1699,7 @@ function morning(first){
   const crew=[brayden,ethan].filter(n=>n.assign!=null).map(n=>`${n.name[0]+n.name.slice(1).toLowerCase()} has ${UNITS[n.assign].name}`).join(', ');
   say('JAKE',(first?`Morning, Max. New building. Your ticket: ${names}. Boxes and wire are in the supply trailer. Kitchens get 12/2, everything else 14/2.`:`Morning. Your ticket: ${names}. Every box. Let's go.`)+(crew?` ${crew}.`:''),7);
   S.sanity=Math.max(S.sanity,20);
+  if(first&&!S.tutDone&&S.day===1)startTut();else hideTut();
   if(S.hungover)setTimeout(()=>{if(S.phase==='work')say('ETHAN','Bro you look ROUGH. How many did you have?',3.5);},6500);
   S.mode='play';save();
 }
@@ -1781,11 +1801,11 @@ $('btnRestart').addEventListener('click',()=>{$('fired').hidden=true;S=fresh();r
 
 /* ================= SAVE ================= */
 const SAVE_KEY='max-simulator-v4';
-function snapshot(){return {tl:S.tl,day:S.day,money:S.money,stamina:S.stamina,sanity:S.sanity,inv:S.inv,strikes:S.strikes,vape:S.vape,cart:S.cart,beers:S.beers,hungover:S.hungover,kit:S.kit,boots:S.boots,tank:S.tank,totalWired:S.totalWired,siteDone:S.siteDone,crew:[brayden.assign,ethan.assign],done:boxes.map(b=>b.done?2:b.mounted?1:0)};}
+function snapshot(){return {tutDone:S.tutDone||S.tut>=0,tl:S.tl,day:S.day,money:S.money,stamina:S.stamina,sanity:S.sanity,inv:S.inv,strikes:S.strikes,vape:S.vape,cart:S.cart,beers:S.beers,hungover:S.hungover,kit:S.kit,boots:S.boots,tank:S.tank,totalWired:S.totalWired,siteDone:S.siteDone,crew:[brayden.assign,ethan.assign],done:boxes.map(b=>b.done?2:b.mounted?1:0)};}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot()));}catch(e){}}
 function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
 function loadSave(){try{const r=localStorage.getItem(SAVE_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
-function applySave(d){S=fresh();for(const k of ['day','money','stamina','sanity','strikes','vape','cart','beers','hungover','kit','boots','tank','totalWired','siteDone'])if(k in d)S[k]=d[k];if(d.inv)S.inv={...S.inv,...d.inv};if(d.tl)S.tl={...d.tl};if(d.crew){brayden.assign=d.crew[0];ethan.assign=d.crew[1];}
+function applySave(d){S=fresh();for(const k of ['day','money','stamina','sanity','strikes','vape','cart','beers','hungover','kit','boots','tank','totalWired','siteDone'])if(k in d)S[k]=d[k];if(d.inv)S.inv={...S.inv,...d.inv};S.tutDone=d.tutDone!==false;if(d.tl)S.tl={...d.tl};if(d.crew){brayden.assign=d.crew[0];ethan.assign=d.crew[1];}
   resetSite();if(Array.isArray(d.done)&&d.done.length===boxes.length)d.done.forEach((v,i)=>{const b=boxes[i];if(v>=1)setMounted(b,true);if(v>=2)showDone(b);});
   UNITS.forEach((u,i)=>{if(unitDone(i)){u.paid=true;u.boxes.forEach(x=>{if(x.bulb){x.bulb.material=M.bulbOn;x.glow.visible=true;}});}});}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({save:snapshot(),mode:S.mode}));}catch(e){}
@@ -1886,6 +1906,69 @@ function updateSmell(dt,moving){
 }
 function clearSmell(){clouds.forEach(c=>{scene.remove(c.s);c.s.material.dispose();});clouds.length=0;S.smell=0;}
 
+/* ================= TUTORIAL ================= */
+const tutMark=(()=>{const c=document.createElement('canvas');c.width=128;c.height=160;const x=c.getContext('2d');
+  x.fillStyle='#ffc61a';x.strokeStyle='#12110d';x.lineWidth=8;x.beginPath();x.moveTo(20,40);x.lineTo(108,40);x.lineTo(64,120);x.closePath();x.stroke();x.fill();
+  x.fillStyle='#12110d';x.font='900 30px "Big Shoulders Display", Impact, sans-serif';x.textAlign='center';x.fillText('HERE',64,30);
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false,depthWrite:false}));
+  s.scale.set(.42,.52,1);s.renderOrder=999;s.visible=false;scene.add(s);return s;})();
+const KEY=(k,t)=>isTouch?t:k;
+let tutT=0,tutBase={},tutBox=null,tutUnit=null;
+const near=(x,z,r)=>Math.hypot(P.x-x,P.z-z)<r;
+function guideTo(x,z){jake.mode='guide';jake.task=null;jake.working=false;jake.talk=0;jake.stare=0;jake.goTo(x,z);S.tutGuide=[x,z];}
+function pickTutBox(u){let best=null,bd=1e9;UNITS[u].boxes.forEach(b=>{if(b.mounted||!(b.kind==='outlet'||b.kind==='switch'))return;const gp=b.group.position,d=Math.hypot(gp.x-P.x,gp.z-P.z);if(d<bd){bd=d;best=b;}});return best;}
+const TUT=[
+ {obj:()=>'Follow Jake to the supply trailer',enter(){guideTo(RIG.stand[0]+.8,RIG.stand[1]+1.3);say('JAKE',"Morning, new guy. I'm Jake, I run this circus. I'm only showing you this once. Maybe twice. Follow me to the trailer.",7);},
+  mark:()=>[RIG.x0+.4,2.4,RIG.z],done:()=>near(RIG.stand[0],RIG.stand[1],3.2)},
+ {obj:()=>`Open the trailer (${KEY('E','USE')}) and take the blue boxes`,enter(){say('JAKE',"Everything we need lives in here. Grab a stack of blue boxes. One thing at a time, so don't get greedy.",6);},
+  mark:()=>[RIG.x0+.4,2.4,RIG.z],done:()=>S.inv.gang>0&&S.mode==='play'},
+ {obj:()=>`Follow Jake into ${UNITS[tutUnit].name}`,enter(){tutUnit=S.ticket[0];const u=UNITS[tutUnit];const [ix,iz]=u.type==='house'?[u.x+2.5,u.z+u.d/2]:[u.cx+1.2,u.cz];guideTo(ix,iz);
+   say('JAKE',`Your ticket's up in the corner. First one's ${u.name}. Come on, I'm not getting younger.`,6);},
+  mark:()=>{const u=UNITS[tutUnit];return [u.door[0],2.3,u.door[1]];},done:()=>unitAt(P.x,P.z)===tutUnit},
+ {obj:()=>`Nail up the marked box (hold ${KEY('E','USE')})`,enter(){tutBox=pickTutBox(tutUnit);tutBase.m=UNITS[tutUnit].boxes.filter(b=>b.mounted).length;
+   say('JAKE',"See the blue outlines with orange paint on the stud? That's where a box goes. Walk up to one and hold "+KEY('E','USE')+" to nail it up.",8);},
+  mark:()=>{if(!tutBox||tutBox.mounted)tutBox=pickTutBox(tutUnit)||tutBox;const p=tutBox.group.position;return [p.x,p.y+.35,p.z];},
+  done:()=>{const m=UNITS[tutUnit].boxes.find(b=>b.mounted&&!b.done&&(b.kind==='outlet'||b.kind==='switch'));if(m){tutBox=m;return true;}return false;}},
+ {obj:()=>'Swap your boxes for a 14/2 reel at the trailer',enter(){say('JAKE',"Now wire. Kitchen boxes get 12/2, that's yellow. Everything else is 14/2, the white stuff. Go swap your boxes for a reel of 14/2. Hurry up.",8);},
+  mark:()=>[RIG.x0+.4,2.4,RIG.z],done:()=>S.inv.w14>0&&S.mode==='play'},
+ {obj:()=>`Feed the wire in, then pull it to each orange dot (hold ${KEY('E','USE')})`,enter(){const gp=tutBox.group.position,nx=tutBox.W.ax?0:tutBox.n,nz=tutBox.W.ax?tutBox.n:0;guideTo(gp.x+nx*1.6+.6,gp.z+nz*1.6);
+   say('JAKE',"Look at the box. Hold "+KEY('E','USE')+" on the orange dot to feed the wire in, then follow the dots up the stud. Point to point. Don't skip.",8);},
+  mark:()=>{const p=tutBox.run[Math.min(tutBox.runIdx,tutBox.run.length-1)];return [p[0],p[1]+.25,p[2]];},done:()=>tutBox.runIdx>=tutBox.run.length-1},
+ {obj:()=>`Get on a ladder by the wall (tap ${KEY('E','USE')} to climb, hold to drag)`,enter(){say('JAKE',"Top plate's too high for you, short stuff. Grab that ladder. Tap to climb it, hold to drag it where you need it.",7);},
+  mark:()=>{let L=ladders[0],bd=1e9;ladders.forEach(l=>{const d=Math.hypot(l.g.position.x-P.x,l.g.position.z-P.z);if(d<bd){bd=d;L=l;}});return [L.g.position.x,2.2,L.g.position.z];},
+  done:()=>!!S.onLadder&&canReach(tutBox.run[tutBox.run.length-1])},
+ {obj:()=>'Pull the wire up through the top plate',enter(){say('JAKE',"There you go. Now pull it up through the top plate.",4);},
+  mark:()=>{const p=tutBox.run[tutBox.run.length-1];return [p[0],p[1]+.2,p[2]];},done:()=>tutBox.runIdx>=tutBox.run.length},
+ {obj:()=>`Strap the wire at the white marks (hold ${KEY('E','USE')})`,enter(){say('JAKE',"Now strap it to the stud. Hit every white mark. Use the ladder for the high one.",6);},
+  mark:()=>{const i=tutBox.strapM.findIndex(o=>!o.done);const p=tutBox.strap[i<0?0:i];return [p[0],p[1]+.2,p[2]];},done:()=>tutBox.done},
+ {obj:()=>'Training with Jake: done',enter(){say('JAKE',"Look at that. One box. Only about a hundred more. Do the whole ticket, then clock out at your truck by 3:30. And don't do anything stupid on my site.",8);tutT=0;
+   jake.mode='patrol';jake.path=[];jake.wait=6;S.tutGuide=null;},mark:()=>null,done:()=>tutT>7},
+ {obj:()=>tutBase.arrived?`Hit your vape (${KEY('V','VAPE button')})`:'Brayden is walking over to you',
+  enter(){tutBase.arrived=false;tutBase.v=S.vape;const b=brayden;if(b.task){b.task.b.claimed=null;b.task=null;}b.working=false;b.mode='visit';b.appT=0;b.repath=0;b.visitTalk=9;
+   b.onArrive=()=>{tutBase.arrived=true;tutBase.v=S.vapeHits||0;say('BRAYDEN',"Yo, I'm Brayden. Jake's gonna run you dead. When your stamina gets low, hit your vape. "+KEY('Press V','Tap the VAPE button')+". Out of pods? Order more on your laptop at home.",9);};},
+  mark:()=>null,done:()=>tutBase.arrived&&(S.vapeHits||0)>tutBase.v},
+ {obj:()=>tutBase.arrived?'Sneak a cart hit where Jake can\'t see you':'Ethan is walking over to you',
+  enter(){brayden.mode='patrol';brayden.talk=0;brayden.wait=0;say('BRAYDEN',"Alright, back to it before Jake sees us talking.",3);tutBase.arrived=false;tutBase.c=S.cartHits||0;tutBase.s=S.strikes;tutBase.s0=S.strikes;const far=UNITS[2];jake.goTo(far.x+2,far.z+3);jake.wait=40;
+   const e=ethan;if(e.task){e.task.b.claimed=null;e.task=null;}e.working=false;e.mode='visit';e.appT=0;e.repath=0;e.visitTalk=10;
+   e.onArrive=()=>{tutBase.arrived=true;tutBase.c=S.cartHits||0;say('ETHAN',"Ethan. Don't tell Jake I told you. "+KEY('Hit C','Tap CART')+" for your cart and you wire twice as fast. Only where Jake can't see you, so watch his eye up top. Porta-john's the safe spot. And you'll stink for a bit. Stay away from him till it fades.",11);};},
+  mark:()=>tutBase.arrived?[JOHN.x,2.95,JOHN.z]:null,done:()=>tutBase.arrived&&((S.cartHits||0)>tutBase.c||S.strikes>tutBase.s0)},
+];
+function tutPaused(){return S.tut>=0&&S.tut<=9;}
+function showTut(){const st=TUT[S.tut];$('tut').hidden=false;document.body.classList.add('tutorial');setT($('tutStep'),`TRAINING · ${S.tut+1}/${TUT.length}`);setT($('tutObj'),st.obj());}
+function hideTut(){$('tut').hidden=true;document.body.classList.remove('tutorial');tutMark.visible=false;}
+function enterTut(i){S.tut=i;tutT=0;if(i>=TUT.length){finishTut();return;}TUT[i].enter();showTut();tone(660,.07,'triangle',.04);}
+function startTut(){S.tutDone=false;S.jakeNext=1e9;jake.place(RIG.stand[0]-6,RIG.stand[1]+10);enterTut(0);}
+function finishTut(skipped){if(!skipped&&S.strikes>(tutBase.s0??S.strikes))setTimeout(()=>say('ETHAN',"Bro. I literally said not in front of Jake.",4),2500);S.tut=-1;S.tutDone=true;S.tutGuide=null;hideTut();S.jakeNext=rand(40,60);if(jake.mode==='guide'){jake.mode='patrol';jake.wait=1;}
+  [brayden,ethan].forEach(n=>{if(n.mode==='visit'){n.mode='patrol';n.wait=1;n.onArrive=null;}});
+  toast(skipped?'Training skipped. The ticket is all yours.':'Training done. The ticket is all yours. Don\'t get caught.','good');save();}
+function tutTick(dt){if(S.tut<0)return;tutT+=dt;const st=TUT[S.tut];S.jakeNext=Math.max(S.jakeNext,30);
+  if(S.tut<=8&&jake.mode==='patrol'&&jake.talk<=0&&jake.stare<=0&&S.tutGuide)guideTo(...S.tutGuide);
+  
+  setT($('tutObj'),st.obj());
+  const m=st.mark&&st.mark();if(m){tutMark.visible=true;tutMark.position.set(m[0],m[1]+Math.sin(performance.now()/260)*.08,m[2]);}else tutMark.visible=false;
+  if(st.done()){enterTut(S.tut+1);}}
+$('tutSkip').addEventListener('click',()=>{if(S.tut>=0)finishTut(true);});
+
 /* ================= TICK ================= */
 const armRest=new THREE.Vector3(.23,-.25,-.36),armMouth=new THREE.Vector3(.06,-.13,-.2);
 let bob=0,wireAnim=0;
@@ -1926,7 +2009,7 @@ function tick(dt){
   const wiring=interact(dt);
   if(S.phase==='work'){
     let drain=.17*(S.hungover?1.8:1);if(run)drain+=1.3;if(wiring)drain+=tv('knee');
-    S.stamina=Math.max(0,S.stamina-drain*dt);S.time+=dt*TS;
+    S.stamina=Math.max(0,S.stamina-drain*dt);S.time+=dt*TS*(tutPaused()?0:1);tutTick(dt);
     if(Math.floor(S.time)%5===0)setSun(S.time,false);
     if(S.stamina<1&&!S.warnedGas){S.warnedGas=true;toast(`You're gassed. ${K('Press V','Tap VAPE')} for a hit.`,'bad');}
     if(S.stamina>20)S.warnedGas=false;
@@ -1950,8 +2033,8 @@ function tick(dt){
     h.t+=dt;
     if(h.kind==='cart'&&view.s==='watching'){caught();}
     else if(h.t>=h.dur){
-      if(h.kind==='vape'){S.vape--;S.stamina=Math.min(100,S.stamina+11*(S.tank?1.5:1));exhale(6,0xeef6ff);}
-      else if(h.kind==='cart'){S.cart--;S.boost=45;S.stamina=Math.min(100,S.stamina+3);S.sanity=Math.min(100,S.sanity+4);exhale(9,0xe8f5dc);S.smell=32*tv('spray');dropSmell(P.x,P.z,true);toast('Zoned in: wiring 2× faster for 45s. You reek for a bit.','good');}
+      if(h.kind==='vape'){S.vapeHits=(S.vapeHits||0)+1;S.vape--;S.stamina=Math.min(100,S.stamina+11*(S.tank?1.5:1));exhale(6,0xeef6ff);}
+      else if(h.kind==='cart'){S.cartHits=(S.cartHits||0)+1;S.cart--;S.boost=45;S.stamina=Math.min(100,S.stamina+3);S.sanity=Math.min(100,S.sanity+4);exhale(9,0xe8f5dc);S.smell=32*tv('spray');dropSmell(P.x,P.z,true);toast('Zoned in: wiring 2× faster for 45s. You reek for a bit.','good');}
       else if(h.kind==='beer'){S.beers--;S.beersTonight++;S.sanity=Math.min(100,S.sanity+15);tone(300,.15,'sine',.04);
         if(S.beersTonight===4)toast('Feeling good. One more and tomorrow hurts.');
         else if(S.beersTonight===5)toast("That's five. You're gonna feel this tomorrow.",'bad');}
@@ -2036,9 +2119,11 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='1.9';
+const GAME_VERSION='2.0';
 const PATCHES=[
+  {v:'2.0',title:'First-day training',items:['Start a new game and Jake walks you through the job step by step: trailer, boxes, nailing up, wire, ladder, top plate, straps','A training card at the top tells you what to do, and a yellow HERE marker points the way','The clock is paused while Jake is teaching','Brayden comes over and shows you the vape','Ethan sneaks over and tells you about the cart, the porta-john and the smell','Already played? Your save skips it. You can also tap Skip any time']},
   {v:'1.9',title:'Cleaner phone screen',items:['One slim top bar on phones: day, time, money, stamina, sanity, Jake and strikes','Ticket is a small pill; tap it to see the list','What you\'re holding shows as a small chip','Vape and cart counts sit right on their buttons','Smaller dialogue that stays out of the middle of the screen','New home-screen icon with Jake on the job']},
+
   {v:'1.8',title:'Brayden and Ethan, for real',items:['Jake won\'t shut up about his boat, his truck, fishing and random car stuff','Brayden: messy dark brown hair, black tee with the yellow logo, light-wash jeans, tape measure in hand','Ethan: white backwards cap, light brown hair, faint mustache, dark tee and black cord necklace','Both based on your video from the job site']},
   {v:'1.7',title:'Real-life models',items:['Everyone rebuilt with smooth bodies, real faces, hands with fingers, and knees and elbows that bend','Both trucks rebuilt with curved bodies, real tires and rims, grilles, mirrors and an open pickup bed','Layered pine trees and leafy trees','Neighbor houses with siding, shingled roofs, trimmed windows, doors, porches and bushes','Rounded porta-john, a proper tapered dumpster, and a generator on a tube frame','Softer, rounded furniture at home','Max\'s hand now has real fingers with knuckles and nails']},
   {v:'1.6',title:'LOWS is open',items:['After each workday you can stop at LOWS on the drive home','Walk the store and buy tools in the Tool Corral','Every tool upgrades Basic → Pro → Master; the stand trim turns bronze, silver, gold','12 tools: pliers, cordless drill, fish tape, cable stapler, tool belt, boots, knee pads, taller ladder, ladder dolly, jobsite radio, odor eliminator, ear plugs','The drill and stapler show up in Max\'s hand when you use them','Your laptop still sells pods, carts, beer and the vape tank mod']},
@@ -2086,7 +2171,7 @@ $('btnNew').disabled=false;$('btnNew').textContent=sv?'New game':'Clock in';
 window.__max={get S(){return S;},P,cam:(x,y,z,yaw,pitch)=>{S.mode='cam';vm.visible=false;camera.position.set(x,y,z);camera.rotation.set(pitch,yaw,0);},
   play:(home)=>{$('title').hidden=true;$('hud').hidden=false;morning(true);if(home){$('talk').hidden=true;endDay();goHome();}},
   wireSome:(ui,n)=>{UNITS[ui].boxes.slice(0,n).forEach(b=>{setMounted(b,true);!b.done&&finishBox(b);});},ladders,climb,climbDown,refreshPts,updateLoose,mountSome:(ui,n)=>{UNITS[ui].boxes.slice(0,n).forEach(b=>setMounted(b,true));},
-  tick:(n)=>{for(let i=0;i<n;i++)tick(1/30);},get jake(){return jake;},get npcs(){return npcs;},UNITS,boxes,findPath,isFree,cellOf,setP:(x,z,yaw,pitch)=>{P.x=x;P.z=z;P.yaw=yaw;P.pitch=pitch;},state:()=>S,jakeWalkUp,toolStands,TOOLS,clouds:()=>clouds.map(c=>({x:+c.x.toFixed(1),z:+c.z.toFixed(1),op:+c.s.material.opacity.toFixed(2),in:c.inside,max:c.max}))};
+  tick:(n)=>{for(let i=0;i<n;i++)tick(1/30);},get jake(){return jake;},get npcs(){return npcs;},UNITS,boxes,findPath,isFree,cellOf,setP:(x,z,yaw,pitch)=>{P.x=x;P.z=z;P.yaw=yaw;P.pitch=pitch;},state:()=>S,enterTut,jakeWalkUp,toolStands,TOOLS,clouds:()=>clouds.map(c=>({x:+c.x.toFixed(1),z:+c.z.toFixed(1),op:+c.s.material.opacity.toFixed(2),in:c.inside,max:c.max}))};
 })();
 
 </script>
