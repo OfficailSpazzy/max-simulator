@@ -991,6 +991,18 @@ const JOHN={x:-31,z:2};
 const reelSpots=[[-12,4.2,.3],[7,-.4,1.1],[-18,6.2,2.2],[-26,-3.6,.8]];
 const REEL={flEdge:std(0xb38a55,{r:.9}),flFace:std(0xffffff,{map:T.ply,r:.85}),y:std(0xffffff,{map:T.coil,r:.6}),w:std(0xffffff,{map:T.coilW,r:.6}),
   fg:new THREE.CylinderGeometry(.46,.46,.035,28),hg:new THREE.CylinderGeometry(.06,.06,.045,12),cg:new THREE.CylinderGeometry(.33,.33,.425,28,1,true)};
+const CARTON_T=ctex(256,128,(x,w,h)=>{x.fillStyle='#c79b5a';x.fillRect(0,0,w,h);blots(x,w,h,300,['#b88b4c','#d4aa6c'],.2,.5,.6,1.6);
+  x.fillStyle='#1f4fb0';x.fillRect(18,22,64,64);x.fillStyle='#f2efe6';x.fillRect(30,34,40,40);x.fillStyle='#1f4fb0';x.fillRect(42,42,16,24);
+  x.fillStyle='#2a2218';x.font='900 26px "Big Shoulders Display", Impact, sans-serif';x.fillText('1-GANG BOXES',92,52,156);x.font='600 15px "IBM Plex Mono", monospace';x.fillText('NAIL-ON · QTY 25',92,80,156);
+  x.fillStyle='rgba(60,40,20,.5)';x.fillRect(0,h-6,w,6);},1,1);
+const CARTON_M=[std(0xc79b5a,{r:.9}),std(0xc79b5a,{r:.9}),std(0xb88b4c,{r:.9}),std(0xb88b4c,{r:.9}),new THREE.MeshStandardMaterial({map:CARTON_T,roughness:.9}),new THREE.MeshStandardMaterial({map:CARTON_T,roughness:.9})];
+function makeCarton(s,count){const g=new THREE.Group(),W=.46*s,Hh=.28*s,D=.34*s,t=.012*s;
+  const side=(w,h,d,x,y,z,mi)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mi!=null?CARTON_M[mi]:CARTON_M[0]);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;};
+  side(W,t,D,0,t/2,0,2);side(W,Hh,t,0,Hh/2,D/2,4);side(W,Hh,t,0,Hh/2,-D/2,5);side(t,Hh,D,W/2,Hh/2,0);side(t,Hh,D,-W/2,Hh/2,0);
+  [[1,.5],[-1,-.5]].forEach(([sx,rz])=>{const f=side(W/2,t,D*.98,sx*(W*.75),Hh+.02*s,0,3);f.rotation.z=sx*-.5;});
+  const n=Math.min(count==null?6:count,8);for(let k=0;k<n;k++){const b=new THREE.Mesh(geo,M.boxTodo);b.scale.set(.07*s/.46*.46*2.2,.11*s/.46*.46*2.2,.075*s/.46*.46*2.2);
+    b.scale.set(.07,.11,.075).multiplyScalar(s);b.position.set(-W/2+W*(.16+(k%4)*.22),Hh*.78+Math.floor(k/4)*.03*s,(k%2?.06:-.06)*s);b.rotation.set(Math.PI/2+.25,0,(k*.7)%1-.4);g.add(b);}
+  return g;}
 function makeReel(s,gauge){// spool on its side, axis along local x, sitting on y=0; gauge 'w12' = yellow, 'w14' = white
   const g=new THREE.Group(),r=new THREE.Group();r.position.y=.46*s;r.rotation.z=Math.PI/2;r.scale.setScalar(s);g.add(r);
   [-.23,.23].forEach(o=>{const f=new THREE.Mesh(REEL.fg,[REEL.flEdge,REEL.flFace,REEL.flFace]);f.position.y=o;f.castShadow=true;f.receiveShadow=true;r.add(f);
@@ -1620,7 +1632,7 @@ const items={};
  Object.values(items).forEach(i=>{i.visible=false;grip.add(i);});}
 const carryVM=new THREE.Group();carryVM.position.set(-.3,-.36,-.62);camera.add(carryVM);
 const carryM={};
-{const st=new THREE.Group();for(let k=0;k<4;k++){const b=new THREE.Mesh(geo,M.boxTodo);b.scale.set(.07,.11,.075);b.position.set(0,k*.07,0);b.rotation.set(Math.PI/2,0,k*.2);st.add(b);}carryM.gang=st;
+{const st=makeCarton(.62,5);st.rotation.set(.35,.5,0);st.position.set(0,-.12,0);carryM.gang=st;
  const oc=new THREE.Group();[0,1].forEach(k=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(.056,.056,.054,8),M.boxTodo);o.position.y=k*.055;oc.add(o);});carryM.oct=oc;
  const pn=new THREE.Mesh(geo,M.panel);pn.scale.set(.2,.32,.06);pn.rotation.set(.3,.5,0);carryM.panel=pn;
  const c14=makeReel(.26,'w14');c14.rotation.set(.15,.9,0);c14.position.y=-.1;carryM.w14=c14;
@@ -1923,7 +1935,7 @@ function refreshPile(ui){const u=UNITS[ui];if(!u.stash)u.stash={};let g=pileGrou
     const h=new THREE.Mesh(geo,M.hit);h.scale.set(1.1,.8,.9);h.position.y=.35;g.add(h);h.userData.i={type:'pile',ui};inter.push(h);g.userData.hit=h;}
   g.children.slice().forEach(c=>{if(c!==g.userData.hit){g.remove(c);}});
   const st=u.stash;let any=false;
-  const n=Math.min(st.gang||0,12);for(let k=0;k<n;k++){const b=new THREE.Mesh(geo,M.boxTodo);b.scale.set(.07,.11,.075);b.position.set(-.35+(k%4)*.09,.04+Math.floor(k/4)*.08,-.2+((k*7)%3)*.02);b.rotation.set(Math.PI/2,0,k*.3);b.castShadow=true;g.add(b);any=true;}
+  if(st.gang){const ncart=Math.min(3,Math.ceil(st.gang/8));for(let k=0;k<ncart;k++){const c=makeCarton(1,k===ncart-1?((st.gang-1)%8)+1:8);c.position.set(-.3+k*.08,k*.29,-.08+k*.02);c.rotation.y=k*.25-.15;g.add(c);}any=true;}
   for(let k=0;k<Math.min(st.oct||0,4);k++){const o=new THREE.Mesh(new THREE.CylinderGeometry(.056,.056,.054,8),M.boxTodo);o.position.set(-.3+k*.13,.03,.12);o.castShadow=true;g.add(o);any=true;}
   if(st.panel){for(let k=0;k<Math.min(st.panel,2);k++){const pn=new THREE.Mesh(geo,M.panel);pn.scale.set(.36,.6,.09);pn.position.set(.0+k*.1,.3,-.32);pn.rotation.x=-.18;pn.castShadow=true;g.add(pn);}any=true;}
   if(st.w14){const r=makeReel(.38,'w14');r.position.set(.32,0,0);r.rotation.y=Math.PI/2;g.add(r);any=true;}
@@ -2499,7 +2511,7 @@ document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>
 /* ================= PATCH NOTES ================= */
 const GAME_VERSION='3.0';
 const PATCHES=[
-  {v:'3.0',title:'Stash your materials',items:['Carry supplies into a unit and press G (STASH on phones) to drop them in a pile','Boxes and wire in that unit pull from the pile automatically, so you can bring in everything first and work after','Walk up to a pile and press E to pick stuff back up','The trailer shows what your ticket still needs after counting your piles']},
+  {v:'3.0',title:'Stash your materials',items:['Carry supplies into a unit and press G (STASH on phones) to drop them in a pile','Boxes and wire in that unit pull from the pile automatically, so you can bring in everything first and work after','Walk up to a pile and press E to pick stuff back up','The trailer shows what your ticket still needs after counting your piles','Blue boxes come in a cardboard carton now, in your hands and in piles']},
   {v:'2.9',title:'Cart stacking + ladder fixes',items:['One cart hit is a light smell that fades fast. Hit it again within about 2 minutes and it stacks, up to ×4. More hits = stronger, longer smell and faster wiring','Hits 2 to 4 each give you a random ability: Eagle Eye (see Jake through walls), Zen (Jake can\'t get to you), Iron Lungs (no stamina drain), Smooth Talker (only nice replies), Zoomies (move faster)','Go past ×4 and you get debuffs: Slow, then Forgetful (you drop stuff, undo wire pulls, blank out), then Munchies (stamina tanks)','Ladders fold up when you carry them and can\'t go through walls, windows or corners anymore','A ladder you set down faces you, the same way it did when you picked it up','Picking up a ladder right next to a wall no longer locks you in place','Brayden and Ethan sit on the couch instead of in it']},
   {v:'2.8',title:'Longer days and your phone',items:['Workdays last about 70% longer, so tickets are actually finishable','At home, press P (or tap PHONE) to text Brayden and Ethan','Invite them over to chill. Ask Brayden for pods or Ethan for the cart and they\'ll bring some. Ask either for beers','They hang on your couch, talk shit about work, and raise your sanity while they\'re there. Drinking with them gives extra sanity','They drink the beer in your fridge. Have less than 2 per person when they show up and they roast you for being broke','They head home when you go to bed']},
   {v:'2.7',title:'Way more talking',items:['Tons of new lines: Jake stories about the boat, truck, fishing and cars, more gossip, more trash talk, more crew chatter, more replies','When Jake is mad, Brayden and Ethan come find you and tell you what he\'s saying about you, plus a tip for calming him down','Mad Jake comes around less, but when he does it\'s only to bitch and mess up your work']},
