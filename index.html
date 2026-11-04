@@ -1000,8 +1000,14 @@ function makeCarton(s,count){const g=new THREE.Group(),W=.46*s,Hh=.28*s,D=.34*s,
   const side=(w,h,d,x,y,z,mi)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mi!=null?CARTON_M[mi]:CARTON_M[0]);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;};
   side(W,t,D,0,t/2,0,2);side(W,Hh,t,0,Hh/2,D/2,4);side(W,Hh,t,0,Hh/2,-D/2,5);side(t,Hh,D,W/2,Hh/2,0);side(t,Hh,D,-W/2,Hh/2,0);
   [[1,.5],[-1,-.5]].forEach(([sx,rz])=>{const f=side(W/2,t,D*.98,sx*(W*.75),Hh+.02*s,0,3);f.rotation.z=sx*-.5;});
-  const n=Math.min(count==null?6:count,8);for(let k=0;k<n;k++){const b=new THREE.Mesh(geo,M.boxTodo);b.scale.set(.07*s/.46*.46*2.2,.11*s/.46*.46*2.2,.075*s/.46*.46*2.2);
-    b.scale.set(.07,.11,.075).multiplyScalar(s);b.position.set(-W/2+W*(.16+(k%4)*.22),Hh*.78+Math.floor(k/4)*.03*s,(k%2?.06:-.06)*s);b.rotation.set(Math.PI/2+.25,0,(k*.7)%1-.4);g.add(b);}
+  // packed full: blue boxes standing side by side in a grid, two layers
+  const bw=.07*s,bh=.11*s,bd=.075*s,cols=Math.floor((W-2*t)/(bw+.004*s)),rows=Math.floor((D-2*t)/(bd+.004*s));
+  const greyBox=M.greyBox||(M.greyBox=std(0x8d9196,{r:.45,m:.15}));const im=new THREE.InstancedMesh(geo,greyBox,cols*rows*2),mm=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(bw,bh,bd),p=new THREE.Vector3();let n=0;
+  const x0=-(cols-1)/2*(bw+.004*s),z0=-(rows-1)/2*(bd+.004*s);
+  for(let L=0;L<2;L++)for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){p.set(x0+c*(bw+.004*s),t+bh/2+L*(bh+.002*s),z0+r*(bd+.004*s));if(p.y+bh/2>Hh+.012*s)continue;mm.compose(p,q,sc);im.setMatrixAt(n++,mm);}
+  im.count=n;im.castShadow=true;g.add(im);
+  // second layer pokes slightly above the rim so you can see it's full
+  const top=new THREE.InstancedMesh(geo,greyBox,cols*rows);let m2=0;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){p.set(x0+c*(bw+.004*s),Hh-bh/2+.03*s,z0+r*(bd+.004*s));mm.compose(p,q,sc);top.setMatrixAt(m2++,mm);}top.count=m2;g.add(top);
   return g;}
 function makeReel(s,gauge){// spool on its side, axis along local x, sitting on y=0; gauge 'w12' = yellow, 'w14' = white
   const g=new THREE.Group(),r=new THREE.Group();r.position.y=.46*s;r.rotation.z=Math.PI/2;r.scale.setScalar(s);g.add(r);
