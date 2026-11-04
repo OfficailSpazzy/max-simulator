@@ -408,7 +408,7 @@ const RENT=45, WAGE=90, BOX_PAY=4, START_T=420, END_T=930, TS=1.45;
 const fresh=()=>({mode:'title',phase:'work',day:1,money:120,stamina:85,strikes:0,vape:20,cart:8,beers:6,
   hungover:false,boost:0,time:START_T,kit:false,boots:false,tank:false,ticket:[],beersTonight:0,
   boxPay:0,bonus:0,fines:0,wiredToday:0,totalWired:0,siteDone:false,warned15:false,warnedGas:false,jakeNext:35,hit:null,
-  sanity:80,smell:0,inv:{gang:0,oct:0,panel:0,w14:0,w12:0},snapped:false,tl:{},tut:-1,tutDone:false});
+  sanity:80,smell:0,inv:{gang:0,oct:0,panel:0,w14:0,w12:0},snapped:false,tl:{},tut:-1,tutDone:false,hasVape:true,hasCart:true});
 let S=fresh();
 const P={x:0,z:22,yaw:0,pitch:0};
 
@@ -1608,7 +1608,7 @@ const JAKE_WALKUP=[
   {t:"Your truck's parked crooked. It's making my truck look bad by being near it.",mad:1},
   {t:"I'm not mad. I'm just disappointed. Like when the fish don't bite.",mad:1},
   // annoying, with effects
-  {t:"Lemme hit that vape real quick. ...Mmm. Mango. Thanks bud.",mad:1,w:2,need:()=>S.vape>=2,fx:()=>{S.vape-=2;return 'Jake hit your vape. −2 hits';}},
+  {t:"Lemme hit that vape real quick. ...Mmm. Mango. Thanks bud.",mad:1,w:2,need:()=>S.hasVape&&S.vape>=2,fx:()=>{S.vape-=2;return 'Jake hit your vape. −2 hits';}},
   {t:"I'm docking you ten bucks. For the attitude. And gas for the boat.",mad:1,w:2,fx:()=>{S.money-=10;S.fines+=10;return '−$10 for "attitude"';}},
   {t:"That box you did is crooked. Rip it out and do it again.",mad:1,w:2,need:()=>doneTicketBoxes().length>0,fx:()=>{const b=pick(doneTicketBoxes());ripOut(b);renderTicket();return `Jake ripped out a ${LABELS[b.kind]} in ${UNITS[b.ui].name}. Remount and rewire it`;}},
   {t:"Good news. Ticket got bigger. Throw {u} on there too.",mad:1,w:2,need:()=>nextUnit()!=null&&S.time<780,fx:(l)=>{const ui=nextUnit();S.ticket.push(ui);renderTicket();return `${UNITS[ui].name} added to your ticket`;}},
@@ -1801,11 +1801,11 @@ $('btnRestart').addEventListener('click',()=>{$('fired').hidden=true;S=fresh();r
 
 /* ================= SAVE ================= */
 const SAVE_KEY='max-simulator-v4';
-function snapshot(){return {tutDone:S.tutDone||S.tut>=0,tl:S.tl,day:S.day,money:S.money,stamina:S.stamina,sanity:S.sanity,inv:S.inv,strikes:S.strikes,vape:S.vape,cart:S.cart,beers:S.beers,hungover:S.hungover,kit:S.kit,boots:S.boots,tank:S.tank,totalWired:S.totalWired,siteDone:S.siteDone,crew:[brayden.assign,ethan.assign],done:boxes.map(b=>b.done?2:b.mounted?1:0)};}
+function snapshot(){return {hasVape:S.hasVape,hasCart:S.hasCart,tutDone:S.tutDone||S.tut>=0,tl:S.tl,day:S.day,money:S.money,stamina:S.stamina,sanity:S.sanity,inv:S.inv,strikes:S.strikes,vape:S.vape,cart:S.cart,beers:S.beers,hungover:S.hungover,kit:S.kit,boots:S.boots,tank:S.tank,totalWired:S.totalWired,siteDone:S.siteDone,crew:[brayden.assign,ethan.assign],done:boxes.map(b=>b.done?2:b.mounted?1:0)};}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot()));}catch(e){}}
 function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
 function loadSave(){try{const r=localStorage.getItem(SAVE_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
-function applySave(d){S=fresh();for(const k of ['day','money','stamina','sanity','strikes','vape','cart','beers','hungover','kit','boots','tank','totalWired','siteDone'])if(k in d)S[k]=d[k];if(d.inv)S.inv={...S.inv,...d.inv};S.tutDone=d.tutDone!==false;if(d.tl)S.tl={...d.tl};if(d.crew){brayden.assign=d.crew[0];ethan.assign=d.crew[1];}
+function applySave(d){S=fresh();for(const k of ['day','money','stamina','sanity','strikes','vape','cart','beers','hungover','kit','boots','tank','totalWired','siteDone'])if(k in d)S[k]=d[k];if(d.inv)S.inv={...S.inv,...d.inv};S.tutDone=d.tutDone!==false;S.hasVape=d.hasVape!==false;S.hasCart=d.hasCart!==false;if(d.tl)S.tl={...d.tl};if(d.crew){brayden.assign=d.crew[0];ethan.assign=d.crew[1];}
   resetSite();if(Array.isArray(d.done)&&d.done.length===boxes.length)d.done.forEach((v,i)=>{const b=boxes[i];if(v>=1)setMounted(b,true);if(v>=2)showDone(b);});
   UNITS.forEach((u,i)=>{if(unitDone(i)){u.paid=true;u.boxes.forEach(x=>{if(x.bulb){x.bulb.material=M.bulbOn;x.glow.visible=true;}});}});}
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({save:snapshot(),mode:S.mode}));}catch(e){}
@@ -1945,15 +1945,15 @@ const TUT=[
    jake.mode='patrol';jake.path=[];jake.wait=6;S.tutGuide=null;},mark:()=>null,done:()=>tutT>7},
  {obj:()=>tutBase.arrived?`Hit Brayden's vape until your stamina is full (${KEY('V','VAPE')}) · ${Math.round(S.stamina)}/100`:'Brayden is walking over to you',
   enter(){tutBase.arrived=false;S.stamina=Math.min(S.stamina,34);const b=brayden;if(b.task){b.task.b.claimed=null;b.task=null;}b.working=false;b.mode='visit';b.appT=0;b.repath=0;b.visitTalk=4;
-   b.onArrive=()=>{tutBase.arrived=true;S.borrowVape=true;say('BRAYDEN',"Bro, you look gassed. Here, hit my vape. "+KEY('Press V','Tap VAPE')+". Keep going till you're back to full. When you're low on your own, your laptop at home sells pods.",9);};},
+   b.onArrive=()=>{tutBase.arrived=true;S.borrowVape=true;S.hasVape=true;say('BRAYDEN',"Bro, you look gassed. Here, hit my vape. "+KEY('Press V','Tap VAPE')+". Keep going till you're back to full. When you're low on your own, your laptop at home sells pods.",9);};},
   tick(){if(tutBase.arrived){brayden.talk=Math.max(brayden.talk,1.5);brayden.mode='talk';}},
   mark:()=>null,done:()=>tutBase.arrived&&S.stamina>=99.5&&!S.hit},
  {obj:()=>S.time<tutBase.at?'Keep working your ticket':tutBase.arrived?`Take a hit of Ethan's cart (${KEY('C','CART')}) where Jake can't see`:'Ethan is walking over to you',
-  enter(){S.borrowVape=false;brayden.mode='patrol';brayden.talk=0;brayden.wait=0;say('BRAYDEN',"Better? Alright, back to it before Jake sees us standing around.",4);
+  enter(){S.borrowVape=false;brayden.mode='patrol';brayden.talk=0;brayden.wait=0;say('BRAYDEN',"Better? Keep that one, I got like four more. Back to it before Jake sees us standing around.",5);toast('Unlocked: vape. '+KEY('Press V','Tap VAPE')+' any time you need stamina.','good');
    tutBase.arrived=false;tutBase.called=false;tutBase.at=Math.max(S.time+70,660);tutBase.c=S.cartHits||0;tutBase.s0=S.strikes;},
   tick(){if(!tutBase.called&&S.time>=tutBase.at){tutBase.called=true;const far=UNITS[2];jake.goTo(far.x+2,far.z+3);jake.mode='patrol';jake.wait=45;
      const e=ethan;if(e.task){e.task.b.claimed=null;e.task=null;}e.working=false;e.mode='visit';e.appT=0;e.repath=0;e.visitTalk=4;
-     e.onArrive=()=>{tutBase.arrived=true;S.borrowCart=true;say('ETHAN',"Yo, Max. Take a hit of this. "+KEY('Hit C','Tap CART')+". It'll help you lock in, you'll wire twice as fast. Just be careful of the smell. Jake's got a nose like a bloodhound, so stay away from him till it fades. And only where he can't see you, porta-john's the safe spot.",12);};}
+     e.onArrive=()=>{tutBase.arrived=true;S.borrowCart=true;S.hasCart=true;say('ETHAN',"Yo, Max. Take a hit of this. "+KEY('Hit C','Tap CART')+". It'll help you lock in, you'll wire twice as fast. Just be careful of the smell. Jake's got a nose like a bloodhound, so stay away from him till it fades. And only where he can't see you, porta-john's the safe spot.",12);};}
    if(tutBase.arrived&&!S.hit&&(S.cartHits||0)===tutBase.c){ethan.talk=Math.max(ethan.talk,1.2);ethan.mode='talk';}},
   mark:()=>tutBase.arrived?[JOHN.x,2.95,JOHN.z]:null,done:()=>tutBase.arrived&&((S.cartHits||0)>tutBase.c||S.strikes>tutBase.s0)},
 ];
@@ -1961,8 +1961,8 @@ function tutPaused(){return S.tut>=0&&S.tut<=9;}
 function showTut(){const st=TUT[S.tut];$('tut').hidden=false;document.body.classList.add('tutorial');setT($('tutStep'),`TRAINING · ${S.tut+1}/${TUT.length}`);setT($('tutObj'),st.obj());}
 function hideTut(){$('tut').hidden=true;document.body.classList.remove('tutorial');tutMark.visible=false;}
 function enterTut(i){S.tut=i;tutT=0;if(i>=TUT.length){finishTut();return;}TUT[i].enter();showTut();tone(660,.07,'triangle',.04);}
-function startTut(){S.tutDone=false;S.jakeNext=1e9;jake.place(RIG.stand[0]-6,RIG.stand[1]+10);enterTut(0);}
-function finishTut(skipped){S.borrowVape=S.borrowCart=false;if(!skipped&&ethan.mode==='talk'){ethan.talk=0;ethan.mode='patrol';ethan.wait=1;}if(!skipped&&S.strikes<=(tutBase.s0??0))setTimeout(()=>say('ETHAN',"See? Locked in. Keep that one to yourself.",4),1800);if(!skipped&&S.strikes>(tutBase.s0??S.strikes))setTimeout(()=>say('ETHAN',"Bro. I literally said not in front of Jake.",4),2500);S.tut=-1;S.tutDone=true;S.tutGuide=null;hideTut();S.jakeNext=rand(40,60);if(jake.mode==='guide'){jake.mode='patrol';jake.wait=1;}
+function startTut(){S.tutDone=false;S.hasVape=false;S.hasCart=false;S.jakeNext=1e9;jake.place(RIG.stand[0]-6,RIG.stand[1]+10);enterTut(0);}
+function finishTut(skipped){S.hasVape=true;S.hasCart=true;S.borrowVape=S.borrowCart=false;if(!skipped&&ethan.mode==='talk'){ethan.talk=0;ethan.mode='patrol';ethan.wait=1;}if(!skipped&&S.strikes<=(tutBase.s0??0))setTimeout(()=>{say('ETHAN',"See? Locked in. Keep the cart, I'll grab another. Just keep it to yourself.",5);toast('Unlocked: cart. '+KEY('Press C','Tap CART')+' to lock in. Watch Jake and the smell.','good');},1800);if(!skipped&&S.strikes>(tutBase.s0??S.strikes))setTimeout(()=>say('ETHAN',"Bro. I literally said not in front of Jake.",4),2500);S.tut=-1;S.tutDone=true;S.tutGuide=null;hideTut();S.jakeNext=rand(40,60);if(jake.mode==='guide'){jake.mode='patrol';jake.wait=1;}
   [brayden,ethan].forEach(n=>{if(n.mode==='visit'){n.mode='patrol';n.wait=1;n.onArrive=null;}});
   toast(skipped?'Training skipped. The ticket is all yours.':'Training done. The ticket is all yours. Don\'t get caught.','good');save();}
 function tutTick(dt){if(S.tut<0)return;tutT+=dt;const st=TUT[S.tut];if(S.tut<=10||tutBase.called&&!tutBase.arrived)S.jakeNext=Math.max(S.jakeNext,30);if(st.tick)st.tick();
@@ -2028,6 +2028,8 @@ function tick(dt){
     npcs.forEach(n=>n.update(dt));
   }
   if(S.boost>0)S.boost=Math.max(0,S.boost-dt);
+  if(input.vape&&!S.hit&&!S.hasVape&&!S.borrowVape){toast("You don't have a vape yet.");input.vape=false;}
+  if(input.cart&&!S.hit&&!S.hasCart&&!S.borrowCart){toast("You don't have a cart. Maybe one of the guys does.");input.cart=false;}
   if(input.vape&&!S.hit){if(S.vape>0||S.borrowVape)S.hit={kind:'vape',t:0,dur:1.05};else toast('Vape is dead. Order pods on your laptop at home.','bad');}
   if(input.cart&&!S.hit){if(S.cart>0||S.borrowCart)S.hit={kind:'cart',t:0,dur:1.7};else toast('Cart is empty. Order a refill at home.','bad');}
   input.vape=input.cart=false;
@@ -2074,6 +2076,7 @@ function hudUpdate(view){
   $('vig').style.opacity=S.stamina<25?(1-S.stamina/25)*.9:0;
   $('lockHint').hidden=isTouch||locked;
   $('ticket').hidden=S.phase!=='work';$('belt').hidden=S.phase!=='work';
+  {const hv=!S.hasVape&&!S.borrowVape,hc=!S.hasCart&&!S.borrowCart;$('iVape').parentNode.hidden=hv;$('iCart').parentNode.hidden=hc;$('bVape').hidden=hv;$('bCart').hidden=hc;}
   if(isTouch){setT($('mDay'),'D'+S.day);setT($('mClock'),S.phase==='work'?fmtClock(S.time):S.phase==='store'?'LOWS':'HOME');setT($('mMoney'),(S.money<0?'−$':'$')+Math.abs(S.money));
     $('mSt').style.width=S.stamina+'%';$('mSa').style.width=S.sanity+'%';$('mSt').parentNode.parentNode.classList.toggle('low',S.stamina<20);$('mSa').parentNode.parentNode.classList.toggle('low',S.sanity<25);
     const ec={watching:'watching',near:'near',coming:'near'}[view.s]||'';if($('mEye')._c!==ec){$('mEye')._c=ec;$('mEye').className='meye '+ec;$('mEye').closest('.mbar').classList.toggle('watching',ec==='watching');}
@@ -2123,8 +2126,9 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='2.1';
+const GAME_VERSION='2.2';
 const PATCHES=[
+  {v:'2.2',title:'Earn your vape and cart',items:['New players don\'t have a vape or cart at first','Brayden gives you his vape when he catches you gassed','Ethan gives you the cart when he comes over later','Old saves keep both']},
   {v:'2.1',title:'Brayden\'s vape, Ethan\'s cart',items:['Brayden catches you gassed and lets you hit his vape until your stamina is full','Around 11:30 Ethan comes over and offers his cart. It\'ll help you lock in, just be careful of the smell','Borrowed hits don\'t use up your own vape or cart']},
   {v:'2.0',title:'First-day training',items:['Start a new game and Jake walks you through the job step by step: trailer, boxes, nailing up, wire, ladder, top plate, straps','A training card at the top tells you what to do, and a yellow HERE marker points the way','The clock is paused while Jake is teaching','Brayden sees you\'re gassed and lets you hit his vape till your stamina is full','Later in the morning Ethan comes over and offers his cart: it\'ll help you lock in, just be careful of the smell','Already played? Your save skips it. You can also tap Skip any time']},
   {v:'1.9',title:'Cleaner phone screen',items:['One slim top bar on phones: day, time, money, stamina, sanity, Jake and strikes','Ticket is a small pill; tap it to see the list','What you\'re holding shows as a small chip','Vape and cart counts sit right on their buttons','Smaller dialogue that stays out of the middle of the screen','New home-screen icon with Jake on the job']},
