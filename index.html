@@ -196,6 +196,31 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
 .touch #choices kbd{display:none}
 .touch #choices{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 176px);width:calc(100vw - 16px);max-width:460px;gap:5px}
 .touch #choices button{padding:9px 10px;font-size:12px;min-height:42px}
+#phone{background:rgba(10,9,7,.6)}
+.phonef{width:min(340px,calc(100vw - 32px));height:min(620px,calc(100vh - 60px));background:#0c0c0e;border:8px solid #1c1c20;border-radius:38px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6);position:relative}
+.pnotch{width:110px;height:24px;background:#1c1c20;border-radius:0 0 14px 14px;margin:0 auto;flex:none}
+.phead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px 8px;border-bottom:1px solid #222;font-family:var(--mono)}
+.phead b{font-size:15px;color:#f4f4f6;font-family:-apple-system,system-ui,sans-serif}
+.plink{background:none;border:0;color:#3d8bff;font-size:14px;cursor:pointer;padding:4px 2px;font-family:-apple-system,system-ui,sans-serif;min-width:52px}
+.plink[hidden]{visibility:hidden;display:block!important}
+#phoneBody{flex:1;display:flex;flex-direction:column;min-height:0;font-family:-apple-system,system-ui,sans-serif}
+.pcontact{display:flex;align-items:center;gap:12px;background:none;border:0;border-bottom:1px solid #1d1d21;padding:12px 14px;text-align:left;cursor:pointer;color:#f4f4f6}
+.pcontact:hover,.pcontact:focus-visible{background:#17171b;outline:none}
+.pav{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6b7280,#3f444c);display:grid;place-items:center;font-weight:700;font-size:17px;flex:none}
+.pmeta{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pmeta b{font-size:15px}.pmeta span{font-size:12.5px;color:#8e8e93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thread{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
+.bub{max-width:78%;padding:8px 12px;border-radius:18px;font-size:14px;line-height:1.3;color:#fff}
+.bub.me{align-self:flex-end;background:#2f7cf6;border-bottom-right-radius:5px}
+.bub.them{align-self:flex-start;background:#26262a;border-bottom-left-radius:5px}
+.typing{display:flex;gap:4px;padding:11px 14px}.typing i{width:7px;height:7px;border-radius:50%;background:#8e8e93;animation:tdot 1s infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tdot{50%{opacity:.3;transform:translateY(-3px)}}
+.pempty{color:#6c6c70;font-size:13px;text-align:center;margin-top:30px}
+.popts{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 14px;border-top:1px solid #1d1d21}
+.popt{background:#1b1b1f;border:1px solid #2e2e33;color:#e8e8ec;border-radius:16px;padding:7px 12px;font-size:13px;cursor:pointer;font-family:inherit}
+.popt:hover,.popt:focus-visible{border-color:#3d8bff;outline:none}
+#bPhone{display:none}.touch #bPhone{display:block}.touch #bPhone[hidden]{display:none}
+.touch #btns #bPhone{grid-column:1;grid-row:1;color:#7fb2ff}
 /* ---------- phone layout ---------- */
 #mhud{display:none}
 .touch #mhud{display:flex;flex-direction:column;gap:6px;position:absolute;top:calc(env(safe-area-inset-top,0px) + 6px);left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px))}
@@ -325,6 +350,7 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
     <button id="bUse" class="big" type="button">USE</button>
     <button id="bRun" type="button">RUN</button>
     <button id="bGrab" type="button" hidden>GRAB</button>
+    <button id="bPhone" type="button" hidden>PHONE</button>
     <button id="bTicket" type="button">LIST</button>
   </div>
 </div>
@@ -370,6 +396,13 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
     <p id="sleepNote"></p>
     <div class="btnrow"><button class="btn" id="btnStay" type="button">Not yet</button><button class="btn primary" id="btnSleep" type="button">Sleep</button></div>
   </div></div>
+</div>
+
+<div class="ov" id="phone" hidden>
+  <div class="phonef"><div class="pnotch"></div>
+    <div class="phead"><button type="button" id="phoneBack" class="plink" hidden>‹ Back</button><b id="phoneTitle">Messages</b><button type="button" id="phoneClose" class="plink">Done</button></div>
+    <div id="phoneBody"></div>
+  </div>
 </div>
 
 <div class="ov" id="shop" hidden>
@@ -424,7 +457,7 @@ const rand=(a,b)=>a+Math.random()*(b-a), pick=a=>a[(Math.random()*a.length)|0];
 const angDiff=(a,b)=>{let d=(a-b)%(Math.PI*2);if(d>Math.PI)d-=Math.PI*2;if(d<-Math.PI)d+=Math.PI*2;return d;};
 
 /* ================= STATE ================= */
-const RENT=45, WAGE=90, BOX_PAY=4, START_T=420, END_T=930, TS=1.45;
+const RENT=45, WAGE=90, BOX_PAY=4, START_T=420, END_T=930, TS=.85;
 const fresh=()=>({mode:'title',phase:'work',day:1,money:120,stamina:85,strikes:0,vape:20,cart:8,beers:6,
   hungover:false,boost:0,time:START_T,kit:false,boots:false,tank:false,ticket:[],beersTonight:0,
   boxPay:0,bonus:0,fines:0,wiredToday:0,totalWired:0,siteDone:false,warned15:false,warnedGas:false,jakeNext:35,hit:null,
@@ -1622,7 +1655,7 @@ if(isTouch)$('ticket').classList.add('collapsed');
 $('ticketHead').addEventListener('click',toggleTicket);
 $('keys').innerHTML=isTouch
   ?'<b>Left stick</b><span>Walk</span><b>Drag right</b><span>Look around</span><b>USE</b><span>Hold to nail, pull wire, strap · tap to talk or climb a ladder</span><b>VAPE</b><span>Hit the vape for stamina</span><b>CART</b><span>Boost. Only when Jake can\'t see you</span><b>GRAB</b><span>Pick up a ladder · on it, push the stick side to side to walk it</span>'
-  :'<b>WASD · Mouse</b><span>Walk and look</span><b>Shift</b><span>Run (burns stamina)</span><b>Hold E</b><span>Nail up boxes, pull wire point to point, strap it</span><b>Ladders</b><span>E climb · G pick up / set down · on it, rock A/D to walk it · S climb down</span><b>V</b><span>Hit the vape for stamina</span><b>C</b><span>Hit the cart: wire 2× faster. Don\'t let Jake see</span><b>Tab</b><span>Show or hide the ticket</span>';
+  :'<b>WASD · Mouse</b><span>Walk and look</span><b>Shift</b><span>Run (burns stamina)</span><b>Hold E</b><span>Nail up boxes, pull wire point to point, strap it</span><b>Ladders</b><span>E climb · G pick up / set down · on it, rock A/D to walk it · S climb down</span><b>V</b><span>Hit the vape for stamina</span><b>C</b><span>Hit the cart: wire 2× faster. Don\'t let Jake see</span><b>Tab</b><span>Show or hide the ticket</span><b>P (at home)</b><span>Your phone. Text the guys to come chill</span>';
 
 /* ================= LINES ================= */
 const LINES={
@@ -1812,8 +1845,8 @@ function moodWalkUp(){
 /* ================= INPUT ================= */
 const keys={};const input={use:false,useEdge:false,vape:false,cart:false};
 let tUse=false,runLatch=false,prevUse=false;let joy={x:0,y:0};
-addEventListener('keydown',e=>{keys[e.code]=true;if(S.mode!=='play')return;
-  if(S.choice&&/^(Digit|Numpad)[1-4]$/.test(e.code)){choose(+e.code.slice(-1)-1);return;}if(e.code==='KeyG')input.grab=true;if(e.code==='KeyV')input.vape=true;if(e.code==='KeyC')input.cart=true;
+addEventListener('keydown',e=>{keys[e.code]=true;if(S.mode==='phone'&&(e.code==='Escape'||e.code==='KeyP')){phoneClose();return;}if(S.mode!=='play')return;
+  if(S.choice&&/^(Digit|Numpad)[1-4]$/.test(e.code)){choose(+e.code.slice(-1)-1);return;}if(e.code==='KeyP'){if(S.mode==='phone')phoneClose();else phoneOpen();return;}if(e.code==='KeyG')input.grab=true;if(e.code==='KeyV')input.vape=true;if(e.code==='KeyC')input.cart=true;
   if(e.code==='Tab'||e.code==='KeyT'){e.preventDefault();toggleTicket();}});
 addEventListener('keyup',e=>{keys[e.code]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;tUse=false;});
@@ -1944,14 +1977,15 @@ function goHome(){
   $('summary').hidden=true;clearSmell();S.onLadder=null;S.drag=null;S.ladPress=null;S.eyeY=1.68;S.phase='home';S.beersTonight=0;S.boost=0;S.hit=null;
   P.x=HX+1;P.z=HZ+1.2;P.yaw=Math.PI*.15;P.pitch=-.05;setPhaseLook(false);renderTicket();
   $('talk').hidden=true;S.mode='play';lock();
-  toast(S.beers?`Home. ${S.beers} beers in the fridge.`:'Home. Fridge is empty. Laptop to order more.');
+  S.visited={};S.hangT=0;guestLeave();TEXTS.BRAYDEN.length=0;TEXTS.ETHAN.length=0;
+  toast((S.beers?`Home. ${S.beers} beers in the fridge.`:'Home. Fridge is empty. Laptop to order more.')+' '+K('Press P for your phone.','Tap PHONE to text the guys.'));
 }
 function openSleep(){S.mode='sleep';unlock();
   const hang=S.beersTonight>=5;
   $('sleepLedger').innerHTML=`<div><span>Rent due tonight</span><span class="neg">−$${RENT}</span></div><div><span>Beers tonight</span><span>${S.beersTonight}</span></div><div><span>Sanity going in</span><span>${Math.round(S.sanity)}</span></div><div><span>Stamina tomorrow</span><span>${hang?65:95}</span></div><div class="tot"><span>Balance after rent</span><span>$${S.money-RENT}</span></div>`;
   $('sleepNote').textContent=hang?'Five or more beers. You\'re waking up hungover: stamina drains almost twice as fast tomorrow.':S.sanity<50?'Your sanity is still low. Another beer would take the edge off Jake tomorrow.':'You\'re set for tomorrow.';
   $('sleep').hidden=false;}
-function sleep(){$('sleep').hidden=true;S.money-=RENT;S.hungover=S.beersTonight>=5;S.stamina=S.hungover?65:95;S.sanity=Math.min(100,S.sanity+5);S.day++;
+function sleep(){$('sleep').hidden=true;if(guestsHere())toast('The guys head home. See you at work, bro.');guestLeave();S.money-=RENT;S.hungover=S.beersTonight>=5;S.stamina=S.hungover?65:95;S.sanity=Math.min(100,S.sanity+5);S.day++;
   if(S.money<0)toast('Rent put you in the red. Landlord is texting.','bad');morning(false);lock();}
 const SHOP=[
   {id:'pod',name:'Vape pod',desc:'+20 vape hits',price:15,buy:()=>S.vape+=20},
@@ -2059,6 +2093,7 @@ function interact(dt){
     else if(it.type==='clerk'){msg=`${K('E','USE')} · talk to the clerk`;if(input.useEdge)say('CLERK',pick(["Electrical's aisle 12. Everything is aisle 12.","You need help finding anything? Great, me neither.","Contractor discount? Ha. No.","Your boss Jake comes in here. He returns stuff he clearly used.","We close in ten minutes. We always close in ten minutes.","The master tier is worth it. Your boss isn't, but the tools are."]),4);}
     else if(it.type==='jakeboat'){if(S.job){msg=`${K('Hold E','Hold USE')} · ${S.job.label.toLowerCase()} (${Math.round(S.job.prog*100)}%)`;if(input.use&&!S.hit){S.job.prog+=dt/7;wiring=true;S.tool='pliers';if(Math.random()<dt*5)tone(rand(400,700),.03,'sine',.015);if(S.job.prog>=1)endJakeJob(true);}}
       else msg=S.phase==='work'?"Jake's boat. Best boat in America, apparently. Don't touch it.":'';}
+    else if(it.type==='friend'){const G=guests[it.nm];msg=`${K('E','USE')} · talk to ${it.nm[0]+it.nm.slice(1).toLowerCase()}`;if(input.useEdge&&G.state==='sit'){G.talk=4;say(it.nm,pick(HOME_LINES[it.nm]),4.5);S.sanity=Math.min(100,S.sanity+2);}}
     else if(it.type==='trailer'){msg=`${K('E','USE')} · grab supplies`;if(input.useEdge){S.mode='supply';unlock();renderSupply();$('supply').hidden=false;}}
     else if(it.type==='npc'){const n=it.npc;msg=`${K('E','USE')} · talk to ${n.name[0]+n.name.slice(1).toLowerCase()}`;
       if(input.useEdge&&n.mode!=='talk'){n.talk=3.5;if(n===jake){const now=S.time;if(now-(S.lastChat||-99)>25){S.lastChat=now;moodAdd(4,'asked about his boat');say('JAKE',pick(isBFF()?["Max! You wanna hear about the boat? Course you do.","My guy. Truck's running great today. Like always."]:isAnnoyed()?["What. What do you want.","Make it quick."]:LINES.JAKE));}else{moodAdd(-2);say('JAKE',"Again? Go work.");}}else say(n.name,pick(LINES[n.name]));}}
@@ -2144,7 +2179,7 @@ const TUT=[
   mark:()=>null,done:()=>tutBase.arrived&&S.stamina>=99.5&&!S.hit},
  {obj:()=>S.time<tutBase.at?'Keep working your ticket':tutBase.arrived?`Take a hit of Ethan's cart (${KEY('C','CART')}) where Jake can't see`:'Ethan is walking over to you',
   enter(){S.borrowVape=false;brayden.mode='patrol';brayden.talk=0;brayden.wait=0;say('BRAYDEN',"Better? Keep that one, I got like four more. Back to it before Jake sees us standing around.",5);toast('Unlocked: vape. '+KEY('Press V','Tap VAPE')+' any time you need stamina.','good');
-   tutBase.arrived=false;tutBase.called=false;tutBase.at=Math.max(S.time+70,660);tutBase.c=S.cartHits||0;tutBase.s0=S.strikes;},
+   tutBase.arrived=false;tutBase.called=false;tutBase.at=Math.max(S.time+45,600);tutBase.c=S.cartHits||0;tutBase.s0=S.strikes;},
   tick(){if(!tutBase.called&&S.time>=tutBase.at){tutBase.called=true;const far=UNITS[2];jake.goTo(far.x+2,far.z+3);jake.mode='patrol';jake.wait=45;
      const e=ethan;if(e.task){e.task.b.claimed=null;e.task=null;}e.working=false;e.mode='visit';e.appT=0;e.repath=0;e.visitTalk=4;
      e.onArrive=()=>{tutBase.arrived=true;S.borrowCart=true;S.hasCart=true;say('ETHAN',"Yo, Max. Take a hit of this. "+KEY('Hit C','Tap CART')+". It'll help you lock in, you'll wire twice as fast. Just be careful of the smell. Jake's got a nose like a bloodhound, so stay away from him till it fades. And only where he can't see you, porta-john's the safe spot.",12);};}
@@ -2168,12 +2203,78 @@ function tutTick(dt){if(S.tut<0)return;tutT+=dt;const st=TUT[S.tut];if(S.tut<=10
 $('tutSkip').addEventListener('click',()=>{if(S.tut>=0)finishTut(true);});
 
 /* ================= TICK ================= */
+/* ================= PHONE + HANGOUTS ================= */
+const HOME_LINES={BRAYDEN:["Bro this couch is better than my bed. I'm not kidding.", "Jake texted me 'u up' at 9 PM. About the boat. Again.", "You ever think about how wire is just metal spaghetti?", "If I fall asleep here, just leave me. I'm happy.", "Bass Country Live is honestly peak TV.", "I'd wire my own house but I'd mess it up on purpose so I don't have to fix anything.", "Your fridge hums in E flat. I can't unhear it.", "Real talk, you're the best electrician on the crew. Don't tell Ethan.", "My mom asked what I do. I said 'fight Jake.' She said that's not a job.", "Ok one more episode then I'm going home. (He will not go home.)"],ETHAN:["This is the most relaxed I've been all week.", "Jake called me while I was on the way here. I let it ring. Felt powerful.", "I've been on thin ice so long I'm basically a figure skater.", "Your place smells like pizza and regret. I love it.", "If Jake shows up here I'm hiding in your bathroom.", "We should start our own company. 'Not Jake Electric.' Boom.", "That pizza box on the table is load-bearing. Don't move it.", "I'm not drunk, I'm just horizontally motivated.", "Pass me a beer. No, the cold one. They're all cold? Perfect.", "Tomorrow I'm gonna be so productive. (He says this every night.)"]};
+const LOOKS={BRAYDEN:{shirt:0x161618,logo:true,fluffy:true,slim:true,jeansOnly:true,pants:0x7d9cc2,shoe:0x26262a,skin:0xe8bfa0,hair:0x3b2618,eyes:0x5a4a3a},
+  ETHAN:{shirt:0x22252b,hat:0xf1eee6,cap:true,backwards:true,tufts:true,necklace:true,stubble:0x9a7a5a,eyes:0x6f8a96,hair:0x8a6a48,skin:0xeac2a4,jeansOnly:true,pants:0x4a5f80,shoe:0x2a2a2e}};
+const SEATS={BRAYDEN:[HX-.95,HZ+2.42],ETHAN:[HX+.15,HZ+2.42]};
+const guests={};
+['BRAYDEN','ETHAN'].forEach(nm=>{const m=makeGuy({...LOOKS[nm],name:nm});m.g.visible=false;m.hit.userData.i={type:'friend',nm};inter.push(m.hit);guests[nm]={...m,state:'away',path:[],talk:0,t:0};});
+const DOOR=[HX+3.85,HZ+.6];
+const BROKE={"BRAYDEN": ["Bro. Two beers? Are you okay? Do you need a GoFundMe?", "Your fridge is emptier than Jake's brain.", "I've seen more beer at a church picnic, man.", "Max is so broke the fridge light doesn't even come on.", "Is this a fridge or a museum? Where's the beer at?", "Dude get a second job. Like a beer job."], "ETHAN": ["You invited us over to a dry house? Bold.", "Damn Max, Jake's paying you in exposure or what?", "Broke boy fridge. I'm telling the crew.", "I counted. That's not enough beer for one of us, let alone three.", "Next time I'm bringing my own fridge.", "This is why Jake has a boat and you have a mattress."]},BEER_OUT={"BRAYDEN": ["We're out, bro. That's on you.", "Fridge is tapped. Tragic.", "Out of beer? On a work night? Embarrassing."], "ETHAN": ["Fridge is bone dry, Max.", "No more beer. I'm writing this down.", "Out already? You buy beer by the can or what?"]},BEER_GRAB={"BRAYDEN": ["Grabbing another, don't mind me.", "Stealing a cold one \ud83c\udf7a", "Fridge run."], "ETHAN": ["Yoink \ud83c\udf7a", "Another one. DJ Khaled.", "Got me a beer, thanks bro."]};
+const cap=nm=>nm[0]+nm.slice(1).toLowerCase();
+function brokeCheck(nm){const people=guestsHere()+1;if(S.beers<=people*2){say(nm,pick(BROKE[nm]),4.5);S.sanity=Math.max(0,S.sanity-4);toast(`Only ${S.beers} beer${S.beers===1?'':'s'} for ${people} people. The guys noticed.`,'bad');}}
+function guestArrive(nm){const G=guests[nm];G.g.visible=true;G.g.position.set(DOOR[0],0,DOOR[1]);G.state='walk';const s=SEATS[nm];G.path=[[HX+2.6,HZ+.7],[HX+1.4,HZ+1.75],[s[0],s[1]-.2],[s[0],s[1]]];
+  tone(520,.08,'triangle',.05);setTimeout(()=>tone(390,.1,'triangle',.05),120);toast(`${nm[0]+nm.slice(1).toLowerCase()} is here.`,'good');
+  const gift=G.gift;G.gift=null;if(gift==='beer'){S.beers+=6;setTimeout(()=>toast(`${nm[0]+nm.slice(1).toLowerCase()} brought a 6-pack (+6 beers)`,'good'),900);}
+  if(gift==='pods'){S.vape+=10;S.hasVape=true;setTimeout(()=>toast('Brayden brought you pods (+10 vape)','good'),900);}
+  if(gift==='cart'){S.cart+=4;S.hasCart=true;setTimeout(()=>toast('Ethan brought his cart (+4 hits)','good'),900);}
+  G.drinkT=rand(15,30);setTimeout(()=>brokeCheck(nm),4300);
+  setTimeout(()=>say(nm,nm==='BRAYDEN'?pick(["Yo! Door was open. It's always open.","What's up man. I brought my whole vibe.","Ayy. Couch me."]):pick(["Knock knock. I'm already in.","Yooo. Long day. Where's the remote.","I'm here. Jake can't find me here."]),3.5),400);}
+function guestLeave(){Object.values(guests).forEach(G=>{G.g.visible=false;G.state='away';G.path=[];G.coming=0;});}
+function guestsHere(){return Object.values(guests).filter(G=>G.state==='sit'||G.state==='walk').length;}
+function guestTick(dt){if(S.phase!=='home')return;let here=0;
+  for(const [nm,G] of Object.entries(guests)){
+    if(G.coming>0){G.coming-=dt;if(G.coming<=0)guestArrive(nm);}
+    if(G.state==='walk'){const p=G.g.position;const [tx,tz]=G.path[0];const dx=tx-p.x,dz=tz-p.z,dd=Math.hypot(dx,dz);
+      if(dd<.06){G.path.shift();if(!G.path.length){G.state='sit';}}else{const st=Math.min(dd,1.4*dt);p.x+=dx/dd*st;p.z+=dz/dd*st;G.g.rotation.y=Math.atan2(dx,dz);}
+      G.t+=dt*7.5;const sw=Math.sin(G.t)*.5;G.legs[0].rotation.x=sw;G.legs[1].rotation.x=-sw;G.legs.forEach(l=>l.userData.knee&&(l.userData.knee.rotation.x=Math.max(0,Math.sin(G.t+1.4))*.8));G.body.position.y=0;}
+    if(G.state==='sit'){here++;G.g.rotation.y=lerp(G.g.rotation.y,Math.PI,.15);G.body.position.y=lerp(G.body.position.y,-.44,.2);
+      G.legs.forEach(l=>{l.rotation.x=lerp(l.rotation.x,-1.45,.2);if(l.userData.knee)l.userData.knee.rotation.x=lerp(l.userData.knee.rotation.x,1.45,.2);});
+      G.arms.forEach((a,i)=>{a.rotation.x=lerp(a.rotation.x,-.35,.1);a.rotation.z=lerp(a.rotation.z,i?-.15:.15,.1);});
+      G.head.rotation.y=Math.sin(performance.now()/2600+(nm==='ETHAN'?2:0))*.25;
+      G.drinkT-=dt;if(G.drinkT<=0){G.drinkT=rand(40,60);
+        if(S.beers>0){S.beers--;G.drank=(G.drank||0)+1;tone(1200,.05,'square',.02);toast(`${cap(nm)} took a beer from your fridge (${S.beers} left)`);if(Math.random()<.5)say(nm,pick(BEER_GRAB[nm]),2.5);
+          if(S.beers===0)setTimeout(()=>say(nm,pick(BEER_OUT[nm]),3.5),2600);}
+        else{say(nm,pick(Math.random()<.5?BEER_OUT[nm]:BROKE[nm]),4);S.sanity=Math.max(0,S.sanity-3);}}
+      if(G.talk>0){G.talk-=dt;G.head.rotation.y=lerp(G.head.rotation.y,Math.atan2(P.x-G.g.position.x,P.z-G.g.position.z)-G.g.rotation.y,.3);}}}
+  if(here){S.sanity=Math.min(100,S.sanity+.35*here*dt);S.hangT=(S.hangT||0)+dt;if(S.hangT>40){S.hangT=0;const nm=pick(Object.keys(guests).filter(k=>guests[k].state==='sit'));if(nm)say(nm,pick(HOME_LINES[nm]),4.5);}}}
+// ---- phone UI
+const TEXTS={BRAYDEN:[],ETHAN:[]};let phoneWith=null;
+const OPTS=[{t:"yo come chill",k:'chill'},{t:"bring beers 🍺",k:'beer'},{t:"got any pods? 💨",k:'pods',who:'BRAYDEN'},{t:"bring the cart 👀",k:'cart',who:'ETHAN'},{t:"jake is on one today",k:'jake'},{t:"nvm im crashing",k:'bye'}];
+const REPLY={BRAYDEN:{chill:["omw","bet. 10 min","say less"],beer:["got u. stopping at the gas station","on it 🍻"],pods:["i got like 3 extra omw"],jake:["bro he called me about his BOAT at 8pm","lmaooo he texted me a pic of a fish"],bye:["aight gn","weak. gn"],busy:["already at ur place bro look up","im literally on ur couch"]},
+  ETHAN:{chill:["pullin up","omw dont lock the door","bet"],beer:["say no more. 30 rack?","coming w beers"],cart:["😏 omw","say less","dont tell jake lol"],jake:["he told the GC i was 'basically furniture'","lmao he tried to fire me thru text again"],bye:["L. gn","fine. gn bro"],busy:["dude im right here","turn around"]}};
+function phoneOpen(){if(S.phase!=='home'||S.mode!=='play')return;S.mode='phone';unlock();$('phone').hidden=false;renderPhone();tone(800,.04,'sine',.03);}
+function phoneClose(){$('phone').hidden=true;S.mode='play';phoneWith=null;lock();}
+function renderPhone(){const el=$('phoneBody');
+  if(!phoneWith){setT($('phoneTitle'),'Messages');$('phoneBack').hidden=true;
+    el.innerHTML=['BRAYDEN','ETHAN'].map(nm=>{const last=TEXTS[nm][TEXTS[nm].length-1];const G=guests[nm];const st=G.state!=='away'?'At your place':G.coming>0?'On the way':'';
+      return `<button type="button" class="pcontact" data-nm="${nm}"><span class="pav">${nm[0]}</span><span class="pmeta"><b>${nm[0]+nm.slice(1).toLowerCase()}</b><span>${st||(last?last.t:'Tap to text')}</span></span></button>`;}).join('');return;}
+  const nm=phoneWith;setT($('phoneTitle'),nm[0]+nm.slice(1).toLowerCase());$('phoneBack').hidden=false;
+  const msgs=TEXTS[nm].map(m=>`<div class="bub ${m.me?'me':'them'}">${m.t}</div>`).join('')+(TEXTS[nm].typing?'<div class="bub them typing"><i></i><i></i><i></i></div>':'');
+  const opts=OPTS.filter(o=>!o.who||o.who===nm).map((o,i)=>`<button type="button" class="popt" data-k="${o.k}">${o.t}</button>`).join('');
+  el.innerHTML=`<div class="thread" id="thread">${msgs||'<p class="pempty">No messages yet.</p>'}</div><div class="popts">${opts}</div>`;
+  const th=$('thread');th.scrollTop=th.scrollHeight;}
+function sendText(nm,k){const o=OPTS.find(x=>x.k===k);TEXTS[nm].push({me:1,t:o.t});TEXTS[nm].typing=true;renderPhone();tone(1000,.05,'sine',.03);
+  const G=guests[nm];const here=G.state!=='away'||G.coming>0;
+  setTimeout(()=>{TEXTS[nm].typing=false;let r;
+    if(k==='bye'){r=pick(REPLY[nm].bye);}
+    else if(k==='jake'){r=pick(REPLY[nm].jake);S.sanity=Math.min(100,S.sanity+3);}
+    else if(here){r=pick(REPLY[nm].busy);}
+    else if(S.visited&&S.visited[nm]){r=nm==='BRAYDEN'?"bro i was JUST there, im in bed":"already went home lol. tmrw";}
+    else{r=pick(REPLY[nm][k]||REPLY[nm].chill);G.coming=rand(8,14);G.gift=k==='chill'?null:k;S.visited=S.visited||{};S.visited[nm]=1;}
+    TEXTS[nm].push({t:r});tone(1300,.05,'sine',.03);setTimeout(()=>tone(1600,.05,'sine',.03),80);if(phoneWith===nm||S.mode==='phone')renderPhone();else toast(`${nm[0]+nm.slice(1).toLowerCase()}: ${r}`);},rand(1100,2200));}
+$('phoneBody').addEventListener('click',e=>{const c=e.target.closest('[data-nm]');if(c){phoneWith=c.dataset.nm;renderPhone();return;}const o=e.target.closest('[data-k]');if(o&&phoneWith)sendText(phoneWith,o.dataset.k);});
+$('phoneBack').addEventListener('click',()=>{phoneWith=null;renderPhone();});
+$('phoneClose').addEventListener('click',phoneClose);
+$('bPhone').addEventListener('pointerdown',e=>{e.preventDefault();phoneOpen();});
+
 const armRest=new THREE.Vector3(.23,-.25,-.36),armMouth=new THREE.Vector3(.06,-.13,-.2);
 let bob=0,wireAnim=0;
 function tick(dt){
   for(let i=puffs.length-1;i>=0;i--){const s=puffs[i],u=s.userData;u.life+=dt;s.position.addScaledVector(u.v,dt);u.v.multiplyScalar(1-dt*.9);u.v.y+=dt*.05;
     s.scale.setScalar(.15+u.life*.55);s.material.opacity=.6*(1-u.life/u.max);if(u.life>=u.max){scene.remove(s);s.material.dispose();puffs.splice(i,1);}}
-  if(S.phase==='home')drawTV(dt);
+  if(S.phase==='home'){drawTV(dt);if(S.mode==='play'||S.mode==='phone')guestTick(dt);}
   if(dust.visible){const a=dust.geometry.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*.05*Math.sin(i+performance.now()/3000);a.setY(i,y);a.setX(i,a.getX(i)+dt*.08);if(a.getX(i)>34)a.setX(i,-34);}a.needsUpdate=true;}
   sky.position.copy(camera.position);
   if(S.mode!=='play'){input.vape=input.cart=false;vm.visible=false;carryVM.visible=false;return;}carryVM.visible=true;
@@ -2245,7 +2346,7 @@ function tick(dt){
     else if(h.t>=h.dur){
       if(h.kind==='vape'){S.vapeHits=(S.vapeHits||0)+1;if(!S.borrowVape)S.vape--;S.stamina=Math.min(100,S.stamina+11*(S.tank?1.5:1));exhale(6,0xeef6ff);}
       else if(h.kind==='cart'){S.cartHits=(S.cartHits||0)+1;if(!S.borrowCart)S.cart--;S.borrowCart=false;S.boost=45;S.stamina=Math.min(100,S.stamina+3);S.sanity=Math.min(100,S.sanity+4);exhale(9,0xe8f5dc);S.smell=32*tv('spray');dropSmell(P.x,P.z,true);toast('Zoned in: wiring 2× faster for 45s. You reek for a bit.','good');}
-      else if(h.kind==='beer'){S.beers--;S.beersTonight++;S.sanity=Math.min(100,S.sanity+15);tone(300,.15,'sine',.04);
+      else if(h.kind==='beer'){S.beers--;S.beersTonight++;S.sanity=Math.min(100,S.sanity+15+(guestsHere()?6:0));if(guestsHere()){const nm=pick(Object.keys(guests).filter(k=>guests[k].state!=='away'));if(nm)say(nm,pick(['Cheers bro 🍻','To not being at work.','To Jake\'s boat sinking. Kidding. Mostly.']),2.5);}tone(300,.15,'sine',.04);
         if(S.beersTonight===4)toast('Feeling good. One more and tomorrow hurts.');
         else if(S.beersTonight===5)toast("That's five. You're gonna feel this tomorrow.",'bad');}
       S.hit=null;}
@@ -2283,6 +2384,7 @@ function hudUpdate(view){
   $('lockHint').hidden=isTouch||locked;
   $('ticket').hidden=S.phase!=='work';$('belt').hidden=S.phase!=='work';
   {const hv=!S.hasVape&&!S.borrowVape,hc=!S.hasCart&&!S.borrowCart;$('iVape').parentNode.hidden=hv;$('iCart').parentNode.hidden=hc;$('bVape').hidden=hv;$('bCart').hidden=hc;}
+  $('bPhone').hidden=!(S.phase==='home');
   {const gb=$('bGrab');const show=S.phase==='work'&&(!!S.drag||!!S.lookLadder);gb.hidden=!show;setT(gb,S.drag?'DROP':'GRAB');}
   if(isTouch){setT($('mDay'),'D'+S.day);setT($('mClock'),S.phase==='work'?fmtClock(S.time):S.phase==='store'?'LOWS':'HOME');setT($('mMoney'),(S.money<0?'−$':'$')+Math.abs(S.money));
     $('mSt').style.width=S.stamina+'%';$('mSa').style.width=S.sanity+'%';$('mSt').parentNode.parentNode.classList.toggle('low',S.stamina<20);$('mSa').parentNode.parentNode.classList.toggle('low',S.sanity<25);
@@ -2333,8 +2435,9 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='2.7';
+const GAME_VERSION='2.8';
 const PATCHES=[
+  {v:'2.8',title:'Longer days and your phone',items:['Workdays last about 70% longer, so tickets are actually finishable','At home, press P (or tap PHONE) to text Brayden and Ethan','Invite them over to chill. Ask Brayden for pods or Ethan for the cart and they\'ll bring some. Ask either for beers','They hang on your couch, talk shit about work, and raise your sanity while they\'re there. Drinking with them gives extra sanity','They drink the beer in your fridge. Have less than 2 per person when they show up and they roast you for being broke','They head home when you go to bed']},
   {v:'2.7',title:'Way more talking',items:['Tons of new lines: Jake stories about the boat, truck, fishing and cars, more gossip, more trash talk, more crew chatter, more replies','When Jake is mad, Brayden and Ethan come find you and tell you what he\'s saying about you, plus a tip for calming him down','Mad Jake comes around less, but when he does it\'s only to bitch and mess up your work']},
   {v:'2.6',title:'Jake talks trash',items:['When Jake is your BFF he walks up and bitches about Brayden and Ethan','He slips you $5–15 every time you listen','New replies for gossip: agree with him and he likes you more, defend the guys and he cools off']},
   {v:'2.5',title:'Talk back to Jake',items:['When Jake walks up you get 4 replies (keys 1–4, or tap)','Every reply moves his mood. Kissing up makes him like you; mouthing off pisses him off but gives you a little sanity','The lower your sanity, the more of your options are mean ones','Walk away or ignore him and he gets mad']},
