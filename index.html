@@ -725,7 +725,7 @@ const TIMES={outlet:2.4,switch:2.4,koutlet:2.8,light:3.2,panel:6.5};
 const MOUNT_T={outlet:1.4,switch:1.4,koutlet:1.4,light:1.8,panel:4};
 const LABELS={outlet:'outlet box',switch:'switch box',koutlet:'kitchen outlet',light:'ceiling box',panel:'the panel'};
 const NEED={outlet:['gang','w14'],switch:['gang','w14'],koutlet:['gang','w12'],light:['oct','w14'],panel:['panel',null]};
-const ITEM={gang:'blue box',oct:'ceiling box',panel:'load center',w14:'14/2',w12:'12/2'};
+const ITEM={gang:'single gang nail-on',oct:'ceiling box',panel:'load center',w14:'14/2',w12:'12/2'};
 const CAP={gang:8,oct:2,panel:1,w14:10,w12:8};
 const capOf=k=>k==='panel'?1:Math.round(CAP[k]*tv('belt'));
 const TOOLS=[
@@ -993,14 +993,14 @@ const REEL={flEdge:std(0xb38a55,{r:.9}),flFace:std(0xffffff,{map:T.ply,r:.85}),y
   fg:new THREE.CylinderGeometry(.46,.46,.035,28),hg:new THREE.CylinderGeometry(.06,.06,.045,12),cg:new THREE.CylinderGeometry(.33,.33,.425,28,1,true)};
 const CARTON_T=ctex(256,128,(x,w,h)=>{x.fillStyle='#c79b5a';x.fillRect(0,0,w,h);blots(x,w,h,300,['#b88b4c','#d4aa6c'],.2,.5,.6,1.6);
   x.fillStyle='#1f4fb0';x.fillRect(18,22,64,64);x.fillStyle='#f2efe6';x.fillRect(30,34,40,40);x.fillStyle='#1f4fb0';x.fillRect(42,42,16,24);
-  x.fillStyle='#2a2218';x.font='900 26px "Big Shoulders Display", Impact, sans-serif';x.fillText('1-GANG BOXES',92,52,156);x.font='600 15px "IBM Plex Mono", monospace';x.fillText('NAIL-ON · QTY 25',92,80,156);
+  x.fillStyle='#2a2218';x.font='900 26px "Big Shoulders Display", Impact, sans-serif';x.fillText('SINGLE GANG',92,52,156);x.font='600 15px "IBM Plex Mono", monospace';x.fillText('NAIL-ON · GREY · 25',92,80,156);
   x.fillStyle='rgba(60,40,20,.5)';x.fillRect(0,h-6,w,6);},1,1);
 const CARTON_M=[std(0xc79b5a,{r:.9}),std(0xc79b5a,{r:.9}),std(0xb88b4c,{r:.9}),std(0xb88b4c,{r:.9}),new THREE.MeshStandardMaterial({map:CARTON_T,roughness:.9}),new THREE.MeshStandardMaterial({map:CARTON_T,roughness:.9})];
 function makeCarton(s,count){const g=new THREE.Group(),W=.46*s,Hh=.28*s,D=.34*s,t=.012*s;
   const side=(w,h,d,x,y,z,mi)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mi!=null?CARTON_M[mi]:CARTON_M[0]);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;};
   side(W,t,D,0,t/2,0,2);side(W,Hh,t,0,Hh/2,D/2,4);side(W,Hh,t,0,Hh/2,-D/2,5);side(t,Hh,D,W/2,Hh/2,0);side(t,Hh,D,-W/2,Hh/2,0);
   [[1,.5],[-1,-.5]].forEach(([sx,rz])=>{const f=side(W/2,t,D*.98,sx*(W*.75),Hh+.02*s,0,3);f.rotation.z=sx*-.5;});
-  // packed full: blue boxes standing side by side in a grid, two layers
+  // packed full: grey single gang nail-ons standing side by side in a grid, two layers
   const bw=.07*s,bh=.11*s,bd=.075*s,cols=Math.floor((W-2*t)/(bw+.004*s)),rows=Math.floor((D-2*t)/(bd+.004*s));
   const greyBox=M.greyBox||(M.greyBox=std(0x8d9196,{r:.45,m:.15}));const im=new THREE.InstancedMesh(geo,greyBox,cols*rows*2),mm=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(bw,bh,bd),p=new THREE.Vector3();let n=0;
   const x0=-(cols-1)/2*(bw+.004*s),z0=-(rows-1)/2*(bd+.004*s);
@@ -1749,6 +1749,19 @@ function jakeWalkUp(){
   showChoices();
 }
 
+
+/* ================= JAKE APPRENTICE PAY RANT ================= */
+const PAY_RANT=["Five years. FIVE YEARS I've been with this company and I'm still on apprentice pay. You know what a journeyman makes? I do. I've done the math in the boat.",
+"Technically I'm an apprentice. Technically. But who runs this site? Me. Who knows where every box goes? Me. Who gets journeyman money? Not me.",
+"I've wired more houses than half the journeymen in this state. Paper says apprentice. Paper's wrong.",
+"Office keeps saying 'take the test, Jake.' I don't need a test. I need a raise. I AM the test.",
+"Five years of pulling wire and I'm getting paid like I started Tuesday. That's not right, man. That's not right.",
+"Journeyman rate. That's all I'm asking. I'd get the boat a new trolling motor and still have money for the truck.",
+"They pay me apprentice and then put me in charge of you guys. Pick one! Either I'm the boss or I'm the apprentice!",
+"You know how many journeymen ask ME how to do stuff? Every day. And they make eight bucks more an hour. Eight!",
+"I'm basically a journeyman with extra steps. And by extra steps I mean less money.",
+"Somebody upstairs is gonna realize what they got in me. Five years. I should be making what the journeymen make, period."];
+JAKE_WALKUP.push(...PAY_RANT.map(t=>({t,w:2})));
 /* ================= EXTRA LINES ================= */
 JAKE_WALKUP.push(...["Took the boat out Sunday. Water was glass. Like a mirror. My reflection looked great.", "I named my trolling motor Steve. Steve's never let me down. Unlike some people.", "My truck has a heated steering wheel. Haven't used it. Just like knowing it's there.", "You know what the secret to bass fishing is? Being me. That's the secret.", "My boat has two livewells. Two. Most guys don't even have one well.", "I put a lift kit on the truck and now I need a ladder to get in. Worth it.", "Diesel smell in the morning. That's my coffee. I also have coffee.", "Caught a catfish so big I had to file paperwork. Okay, I didn't. But I could've.", "My truck's paint is called Midnight Pearl. It's blue. But Midnight Pearl.", "You ever seen a sunrise from a bass boat? No? That's sad, Max.", "Somebody parked next to my truck at Walmart. Next to it. Like they were equals.", "Gonna get a second boat. For the first boat. As a backup. Don't question it.", "I can back a trailer down a ramp with one hand. Other hand's holding a coffee.", "Wife says I love the boat more than her. I said that's not fair to the boat.", "Tire pressure. Everybody ignores it. I check mine twice a day. Sometimes three.", "Turbos are cheating. I said what I said.", "My grandpa drove a '78 F-250 with no muffler. You could hear him coming from two counties.", "Best fishing is right before a storm. Fish get desperate. Like Brayden at lunch.", "I've got a depth finder that can see fish. Practically see their thoughts.", "Never trust a truck with a clean bed. Means it's never worked a day.", "My boat's horn plays Dixie. Kidding. It plays a really loud honk. Which is better.", "I changed my own oil Saturday. Only took four hours. Drained the transmission first by accident.", "Fish can see color, you know. That's why I wear camo. To the grocery store too.", "If you ever need a jump, don't ask me. Not because I won't. Because I'll judge your battery.", "Some kid at the lake asked if my boat was for sale. I told him it's not for sale, it's for envy.", "Truck's got 240,000 miles. Runs better than me. Runs better than you, honestly.", "Spark plugs are like people. Gotta gap 'em right or they don't work.", "Big fish story? Nah. Big fish fact.", "Hand-washed the truck at 6 AM. Neighbors watched. They learned something.", "I don't use GPS. I use instinct. And GPS."].map(t=>({t})),...["Pick up the pace. My boat moves faster than you and it's on a trailer.", "You're making the crew look slow. And that's hard to do with this crew.", "I don't pay you to look at the framing. Well I do. But look at it faster.", "Another day, another box not done. Riveting.", "Did you get here today or just your truck?", "I've seen faster wire pulls at a nursing home.", "Remind me why I hired you? Actually don't. I'll figure it out.", "Every minute you stand there costs me gas money for the boat.", "That's a lot of standing around for a guy on my clock.", "Your work's like my truck in winter. Takes forever to get going."].map(t=>({t,mad:1})));
 LINES.BRAYDEN.push(...["Ethan bet me twenty bucks I can't wire a three-way switch blindfolded. I can't.", "If you see Jake coming, cough twice. That's our signal. We have a signal now.", "I put my phone in a wire box so I could watch videos at eye level. Game changer.", "Jake's boat is honestly kinda sick. Don't tell him I said that.", "I found a dollar in a wall cavity. Finders keepers. The house owes me.", "The generator makes a noise like a sad goose. Listen. There. Sad goose."]);LINES.ETHAN.push(...["Jake asked me to hold his coffee and then just walked off. I've been holding it an hour.", "I'm on thin ice. I'm also on a hoverboard. Both are fine.", "Pro tip: wire looks way straighter if you squint.", "Jake's truck has a sticker that says 'my other truck is also this truck.' I don't get it.", "Brayden wants to start a band called The Romex. I said only if I'm the lead.", "If Jake asks, I was in Apt 104 all morning. I was in the porta-john."]);
@@ -1848,6 +1861,9 @@ const PISSED_LINES=[
   {t:"Drop what you're doing. You're helping me with my boat. Now.",mad:1,w:5,need:()=>!S.job&&S.tut<0&&S.time<870,fx:()=>{startJakeJob();return null;}},
   {t:"Ticket just got bigger. You love work, right? Throw {u} on there.",mad:1,w:2,need:()=>nextUnit()!=null&&S.time<780,fx:()=>{const ui=nextUnit();S.ticket.push(ui);renderTicket();return `${UNITS[ui].name} added to your ticket`;}},
 ];
+BFF_LINES.push(...["Between me and you? I'm technically still an apprentice. Five years here. I should be getting journeyman pay and everybody knows it.","You're the only one who gets it. I've been here five years. Journeyman work, apprentice check. You'd back me up if I asked for a raise, right?"].map(t=>({t,w:2})));
+PISSED_LINES.push(...["Don't tell me how to do it. Five years with this company. I should be on journeyman pay and I'm stuck babysitting you.","You know what I get paid to deal with you? Apprentice money. After five years. So yeah I'm in a mood."].map(t=>({t,w:2,mad:1})));
+
 const ticketBox=()=>{let best=null,bd=1e9;boxes.forEach(b=>{if(b.done||!S.ticket.includes(b.ui)||b.kind==='panel'||b.claimed)return;const p=b.group?b.group.position:b.mesh.position,d=Math.hypot(p.x-P.x,p.z-P.z);if(d<bd){bd=d;best=b;}});return best;};
 const JOBS=[["Help me wash my boat. It's dusty. It's never dusty. Come on.","Scrub Jake's boat"],["Help me load the boat. No, the right way. MY way.","Load Jake's boat"],["Come polish my truck's bumper. Someone breathed on it.","Polish Jake's truck"]];
 function startJakeJob(){const j=pick(JOBS);S.job={t:0,prog:0,dead:45,label:j[1]};jake.mode='guide';jake.task=null;jake.talk=0;jake.goTo(JRIG.stand[0]+1.6,JRIG.stand[1]+.2);S.tutGuide=null;
@@ -1933,7 +1949,7 @@ function resetSite(){boxes.forEach(b=>{if(b.done||b.wires.length)unwireBox(b);b.
 /* ---- material stashes inside units ---- */
 const have=(k,ui)=>S.inv[k]+((UNITS[ui].stash||{})[k]||0);
 function useMat(k,ui){if(S.inv[k]>0){S.inv[k]--;return 'hand';}const st=UNITS[ui].stash;if(st&&st[k]>0){st[k]--;refreshPile(ui);return 'pile';}return null;}
-const stashText=ui=>{const st=UNITS[ui].stash||{};const p=[];if(st.gang)p.push(st.gang+' blue');if(st.oct)p.push(st.oct+' ceiling');if(st.panel)p.push(st.panel+' panel');if(st.w14)p.push('14/2 ×'+st.w14);if(st.w12)p.push('12/2 ×'+st.w12);return p.join(' · ');};
+const stashText=ui=>{const st=UNITS[ui].stash||{};const p=[];if(st.gang)p.push(st.gang+' single gang');if(st.oct)p.push(st.oct+' ceiling');if(st.panel)p.push(st.panel+' panel');if(st.w14)p.push('14/2 ×'+st.w14);if(st.w12)p.push('12/2 ×'+st.w12);return p.join(' · ');};
 function pileSpot(u){return u.type==='house'?[u.x+u.w/2+1.3,u.z+u.d-1.0]:[u.x+u.w/2+1.3,u.z+1.0];}
 const pileGroups=[];
 function refreshPile(ui){const u=UNITS[ui];if(!u.stash)u.stash={};let g=pileGroups[ui];
@@ -2046,7 +2062,7 @@ function renderShop(){setT($('shopMoney'),'$'+S.money);
 $('shopItems').addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(!b)return;const it=SHOP.find(x=>x.id===b.dataset.id);
   if(!it||S.money<it.price||(it.once&&S[it.once]))return;S.money-=it.price;if(it.once)S[it.once]=true;else it.buy();tone(700,.08,'triangle',.05);toast(`Bought: ${it.name}`,'good');renderShop();});
 const SUPPLY=[
-  {id:'gang',name:'Stack of blue boxes',desc:'Outlets, switches, kitchen outlets',unit:'boxes'},
+  {id:'gang',name:'Carton of single gang nail-ons',desc:'Outlets, switches, kitchen outlets',unit:'boxes'},
   {id:'oct',name:'Octagon ceiling boxes',desc:'For the ceiling lights',unit:'boxes'},
   {id:'panel',name:'Load center',desc:'One per unit',unit:'panel'},
   {id:'w14',name:'14/2 NM-B reel · white',desc:'Outlets, switches, lights',unit:'runs'},
@@ -2058,13 +2074,13 @@ function renderSupply(){
   $('supplyItems').innerHTML=SUPPLY.map(it=>{const have=S.inv[it.id],full=have>=capOf(it.id);const label=full?'Full':cur&&cur!==it.id?'Swap':cur===it.id?'Top up':'Take';
     return `<div class="item"><b>${it.name}</b><span>${it.desc} · you can carry ${capOf(it.id)} ${it.unit}</span><button type="button" data-id="${it.id}" ${full?'disabled':''}>${label}</button></div>`;}).join('');
   const need={gang:0,oct:0,panel:0,w14:0,w12:0};S.ticket.forEach(ui=>UNITS[ui].boxes.forEach(b=>{if(b.done)return;const [bi,wi]=NEED[b.kind];if(!b.mounted)need[bi]++;if(wi&&b.runIdx===0)need[wi]++;}));S.ticket.forEach(ui=>{const st=UNITS[ui].stash||{};for(const k in need)need[k]=Math.max(0,need[k]-(st[k]||0));});
-  $('supplyNeed').textContent=`Your ticket still needs: ${need.gang} blue boxes, ${need.oct} ceiling boxes, ${need.panel} load center${need.panel===1?'':'s'}, ${need.w14} runs of 14/2, ${need.w12} runs of 12/2.`;}
+  $('supplyNeed').textContent=`Your ticket still needs: ${need.gang} single gang nail-ons, ${need.oct} ceiling boxes, ${need.panel} load center${need.panel===1?'':'s'}, ${need.w14} runs of 14/2, ${need.w12} runs of 12/2.`;}
 $('supplyItems').addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(!b)return;const it=SUPPLY.find(x=>x.id===b.dataset.id);
   if(S.inv[it.id]>=capOf(it.id))return;Object.keys(S.inv).forEach(k=>{if(k!==it.id)S.inv[k]=0;});S.inv[it.id]=capOf(it.id);tone(520,.06,'triangle',.04);renderSupply();});
 $('btnPutBack').addEventListener('click',()=>{Object.keys(S.inv).forEach(k=>S.inv[k]=0);renderSupply();});
 function carryShort(){const c=carrying();if(!c)return '';const n=S.inv[c];return {gang:`${n} boxes`,oct:`${n} ceiling boxes`,panel:'load center',w14:`14/2 ×${n}`,w12:`12/2 ×${n}`}[c];}
 function carryText(){const c=carrying();if(!c)return 'nothing';const n=S.inv[c];
-  return {gang:`${n} blue box${n===1?'':'es'}`,oct:`${n} ceiling box${n===1?'':'es'}`,panel:'a load center',w14:`14/2 reel (${n} run${n===1?'':'s'} left)`,w12:`12/2 reel (${n} run${n===1?'':'s'} left)`}[c];}
+  return {gang:`${n} single gang nail-on${n===1?'':'s'}`,oct:`${n} ceiling box${n===1?'':'es'}`,panel:'a load center',w14:`14/2 reel (${n} run${n===1?'':'s'} left)`,w12:`12/2 reel (${n} run${n===1?'':'s'} left)`}[c];}
 $('btnSupplyClose').addEventListener('click',()=>{$('supply').hidden=true;S.mode='play';lock();});
 $('btnShopClose').addEventListener('click',()=>{$('shop').hidden=true;S.mode='play';lock();});
 $('btnHome').addEventListener('click',goHome);$('btnLows').addEventListener('click',goStore);
@@ -2227,7 +2243,7 @@ function pickTutBox(u){let best=null,bd=1e9;UNITS[u].boxes.forEach(b=>{if(b.moun
 const TUT=[
  {obj:()=>'Follow Jake to the supply trailer',enter(){guideTo(RIG.stand[0]+.8,RIG.stand[1]+1.3);say('JAKE',"Morning, new guy. I'm Jake, I run this circus. I'm only showing you this once. Maybe twice. Follow me to the trailer.",7);},
   mark:()=>[RIG.x0+.4,2.4,RIG.z],done:()=>near(RIG.stand[0],RIG.stand[1],3.2)},
- {obj:()=>`Open the trailer (${KEY('E','USE')}) and take the blue boxes`,enter(){say('JAKE',"Everything we need lives in here. Grab a stack of blue boxes. One thing at a time, so don't get greedy.",6);},
+ {obj:()=>`Open the trailer (${KEY('E','USE')}) and take the single gang nail-ons`,enter(){say('JAKE',"Everything we need lives in here. Grab a carton of single gang nail-ons. One thing at a time, so don't get greedy.",6);},
   mark:()=>[RIG.x0+.4,2.4,RIG.z],done:()=>S.inv.gang>0&&S.mode==='play'},
  {obj:()=>`Follow Jake into ${UNITS[tutUnit].name}`,enter(){tutUnit=S.ticket[0];const u=UNITS[tutUnit];const [ix,iz]=u.type==='house'?[u.x+2.5,u.z+u.d/2]:[u.cx+1.2,u.cz];guideTo(ix,iz);
    say('JAKE',`Your ticket's up in the corner. First one's ${u.name}. Come on, I'm not getting younger.`,6);},
@@ -2515,9 +2531,10 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='3.0';
+const GAME_VERSION='3.1';
 const PATCHES=[
-  {v:'3.0',title:'Stash your materials',items:['Carry supplies into a unit and press G (STASH on phones) to drop them in a pile','Boxes and wire in that unit pull from the pile automatically, so you can bring in everything first and work after','Walk up to a pile and press E to pick stuff back up','The trailer shows what your ticket still needs after counting your piles','Blue boxes come in a cardboard carton now, in your hands and in piles']},
+  {v:'3.1',title:'Grey nail-ons + Jake\'s pay rant',items:['Boxes now come as cartons packed full of grey single gang nail-ons, standing side by side','Everything that said blue boxes now says single gang nail-ons','Jake is technically just an apprentice. Five years with the company and he will tell you all about how he should be on journeyman pay']},
+  {v:'3.0',title:'Stash your materials',items:['Carry supplies into a unit and press G (STASH on phones) to drop them in a pile','Boxes and wire in that unit pull from the pile automatically, so you can bring in everything first and work after','Walk up to a pile and press E to pick stuff back up','The trailer shows what your ticket still needs after counting your piles','Grey single gang nail-ons come in a cardboard carton now, in your hands and in piles']},
   {v:'2.9',title:'Cart stacking + ladder fixes',items:['One cart hit is a light smell that fades fast. Hit it again within about 2 minutes and it stacks, up to ×4. More hits = stronger, longer smell and faster wiring','Hits 2 to 4 each give you a random ability: Eagle Eye (see Jake through walls), Zen (Jake can\'t get to you), Iron Lungs (no stamina drain), Smooth Talker (only nice replies), Zoomies (move faster)','Go past ×4 and you get debuffs: Slow, then Forgetful (you drop stuff, undo wire pulls, blank out), then Munchies (stamina tanks)','Ladders fold up when you carry them and can\'t go through walls, windows or corners anymore','A ladder you set down faces you, the same way it did when you picked it up','Picking up a ladder right next to a wall no longer locks you in place','Brayden and Ethan sit on the couch instead of in it']},
   {v:'2.8',title:'Longer days and your phone',items:['Workdays last about 70% longer, so tickets are actually finishable','At home, press P (or tap PHONE) to text Brayden and Ethan','Invite them over to chill. Ask Brayden for pods or Ethan for the cart and they\'ll bring some. Ask either for beers','They hang on your couch, talk shit about work, and raise your sanity while they\'re there. Drinking with them gives extra sanity','They drink the beer in your fridge. Have less than 2 per person when they show up and they roast you for being broke','They head home when you go to bed']},
   {v:'2.7',title:'Way more talking',items:['Tons of new lines: Jake stories about the boat, truck, fishing and cars, more gossip, more trash talk, more crew chatter, more replies','When Jake is mad, Brayden and Ethan come find you and tell you what he\'s saying about you, plus a tip for calming him down','Mad Jake comes around less, but when he does it\'s only to bitch and mess up your work']},
