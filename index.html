@@ -1405,15 +1405,15 @@ function refreshAllStands(){TOOLS.forEach(t=>refreshStand(t.k));}
 const _skinMats=new Map();
 function skinMat(m){if(_skinMats.has(m))return _skinMats.get(m);const c=m.clone();c.skinning=true;_skinMats.set(m,c);return c;}
 // prof: [[y,r],...] top->bottom in pivot space. bones: [root(body-level), upper, lower]; joint at jy.
-function limbGeo(prof,seg,jy,blend,topY){const pts=[];for(let i=prof.length-1;i>=0;i--)pts.push(new THREE.Vector2(Math.max(.0005,prof[i][1]),prof[i][0]));
+function limbGeo(prof,seg,jy,blend,topY,topR=.09,topMax=.85){const pts=[];for(let i=prof.length-1;i>=0;i--)pts.push(new THREE.Vector2(Math.max(.0005,prof[i][1]),prof[i][0]));
   const g=new THREE.LatheGeometry(pts,seg);const pos=g.attributes.position,n=pos.count,si=new Uint16Array(n*4),sw=new Float32Array(n*4);
-  for(let v=0;v<n;v++){const y=pos.getY(v);let w0=topY==null?0:clamp((y-topY)/.09,0,1)*.85;
+  for(let v=0;v<n;v++){const y=pos.getY(v);let w0=0;if(topY!=null){const u=clamp((y-topY)/topR,0,1);w0=u*u*(3-2*u)*topMax;}
     const t=clamp((jy+blend-y)/(2*blend),0,1),wl=t*t*(3-2*t);const rest=1-w0;
     si[v*4]=0;si[v*4+1]=1;si[v*4+2]=2;sw[v*4]=w0;sw[v*4+1]=rest*(1-wl);sw[v*4+2]=rest*wl;}
   g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));return g;}
-function makeLimb(parentBody,pivot,joint,parts,jy,blend,topY){
+function makeLimb(parentBody,pivot,joint,parts,jy,blend,topY,topR,topMax){
   const b0=new THREE.Bone(),b1=new THREE.Bone(),b2=new THREE.Bone();b0.position.copy(pivot.position);parentBody.add(b0);pivot.add(b1);joint.add(b2);
-  const meshes=parts.map(([prof,mat,seg])=>{const m=new THREE.SkinnedMesh(limbGeo(prof,seg||22,jy,blend,topY),skinMat(mat));m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;pivot.add(m);return m;});
+  const meshes=parts.map(([prof,mat,seg])=>{const m=new THREE.SkinnedMesh(limbGeo(prof,seg||22,jy,blend,topY,topR,topMax),skinMat(mat));m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;pivot.add(m);return m;});
   return {bones:[b0,b1,b2],meshes,bind(){const sk=new THREE.Skeleton([b0,b1,b2]);meshes.forEach(m=>m.bind(sk));}};}
 function makeGuy(o){
   const g=new THREE.Group(),body=new THREE.Group();g.add(body);
@@ -1449,9 +1449,9 @@ function makeGuy(o){
   // arms: shoulder pivot -> upper arm, elbow pivot -> forearm + hand
   const arms=[-1,1].map(sx=>{const a=new THREE.Group();a.position.set(sx*.235,1.43,0);body.add(a);
     const el=new THREE.Group();el.position.y=-.27;a.add(el);a.userData.elbow=el;
-    const ARM=[[.045,.0],[.036,.036],[.012,.055],[-.04,.058],[-.13,.054],[-.22,.049],[-.27,.046],[-.33,.046],[-.42,.04],[-.5,.033],[-.56,.03],[-.585,.026]];
-    const parts=o.long?[[ARM,shirt]]:[[ARM.filter(p=>p[0]>-.2).concat([[-.215,.054],[-.226,.0545]]).map(([y,r])=>[y,r+(y<.02?.004:.003)]),shirt],[ARM.filter(p=>p[0]<-.12),skin]];
-    a.userData.limb=makeLimb(body,a,el,parts,-.27,.055,-.0);
+    const ARM=[[.075,.0],[.07,.03],[.055,.056],[.028,.07],[-.01,.071],[-.06,.064],[-.12,.056],[-.17,.054],[-.22,.049],[-.27,.046],[-.33,.046],[-.42,.04],[-.5,.033],[-.56,.03],[-.585,.026]];
+    const parts=o.long?[[ARM,shirt]]:[[ARM.filter(p=>p[0]>-.2).concat([[-.215,.054],[-.226,.0545]]).map(([y,r])=>[y,r+.004]),shirt],[ARM.filter(p=>p[0]<-.12),skin]];
+    a.userData.limb=makeLimb(body,a,el,parts,-.27,.055,-.13,.18,.92);
     const hd=new THREE.Group();hd.position.set(0,-.29,.005);el.add(hd);a.userData.hand=hd;
     addM(RB(.075,.09,.04,.018),skin,hd,0,-.03,0);
     const fing=[];for(let f=0;f<4;f++){const k1=new THREE.Group();k1.position.set(-.026+f*.017,-.07,.002);hd.add(k1);addM(capG(.0095,.0088,.026,10),skin,k1,0,-.018,0);
@@ -1460,7 +1460,11 @@ function makeGuy(o){
     hd.userData.fing=fing;hd.userData.thumb=th;
     return a;});
   // bind limbs in a straight rest pose
-  g.updateMatrixWorld(true);[...legs,...arms].forEach(x=>x.userData.limb.bind());arms.forEach(a=>a.userData.elbow.rotation.x=-.18);
+  arms.forEach((a,i)=>{const sx=i?1:-1;a.position.x=sx*(.215*xs/1.12+.008);a.userData.limb.bones[0].position.copy(a.position);a.userData.base=a.position.clone();a.userData.abd=sx*(o.belly?.13:o.slim?.05:.08);});
+  g.updateMatrixWorld(true);[...legs,...arms].forEach(x=>x.userData.limb.bind());arms.forEach(a=>{a.userData.elbow.rotation.x=-.18;a.rotation.z=a.userData.abd;});
+  // trapezius / shoulder slope so the arms grow out of the torso
+  addM(sphG(.1,24,12),shirt,body,0,1.455,-.01,2.15*xs,.62,1.12*zs*1.25);
+  if(o.vest)addM(sphG(.1,24,12,0,Math.PI*.5),std(o.vest,{r:.8}),body,0,1.44,-.01,2.0*xs*1.02,.5,1.15*zs*1.3);
   // neck + head
   addM(new THREE.CylinderGeometry(.052,.06,.12,16),skin,body,0,1.55,0);
   const head=new THREE.Group();head.position.y=1.71;body.add(head);
@@ -1576,13 +1580,16 @@ class NPC{
     this.walkT+=dt*(walking?7.5:0);this.breath+=dt*1.6;const sw=walking?Math.sin(this.walkT)*.55:0;
     this.legs[0].rotation.x=lerp(this.legs[0].rotation.x,sw,.3);this.legs[1].rotation.x=lerp(this.legs[1].rotation.x,-sw,.3);
     this.legs.forEach((l,i)=>{const k=l.userData.knee;if(k)k.rotation.x=lerp(k.rotation.x,walking?Math.max(0,Math.sin(this.walkT+(i?Math.PI:0)+1.4))*.95:(this.working?.05:0),.3);});
-    this.arms.forEach(a=>{const el=a.userData.elbow;if(el)el.rotation.x=lerp(el.rotation.x,this.working&&!walking?-.9:walking?-.35:-.18,.15);});
+    this.arms.forEach(a=>{const el=a.userData.elbow;if(el)el.rotation.x=lerp(el.rotation.x,this.working&&!walking?-.9:walking?-.22+Math.min(0,a.rotation.x)*.85:-.18,walking?.09:.15);});
+    this.body.rotation.y=lerp(this.body.rotation.y,walking?Math.sin(this.walkT)*.06:0,.2);
     this.body.position.y=walking?Math.abs(Math.sin(this.walkT))*.03:Math.sin(this.breath)*.004;
     this.head.rotation.x=lerp(this.head.rotation.x,this.working&&!walking?-.35:0,.1);
     if(this.working&&!walking){const t=performance.now()/1000;this.arms[1].rotation.x=lerp(this.arms[1].rotation.x,-1.7+Math.sin(t*7)*.22,.2);this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-1.35+Math.sin(t*5)*.1,.2);}
     else if(this.talk>0&&this.isJake){const t=performance.now()/1000;this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-.9+Math.sin(t*4)*.35,.2);this.arms[1].rotation.x=lerp(this.arms[1].rotation.x,-.5,.2);}
     else{this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-sw*.8,.3);this.arms[1].rotation.x=lerp(this.arms[1].rotation.x,this.isJake&&!walking?-.5:sw*.8,.3);}
-    if(this.offer&&!walking){this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-1.05,.2);this.arms[0].userData.elbow.rotation.x=lerp(this.arms[0].userData.elbow.rotation.x,-.5,.2);}}
+    if(this.offer&&!walking){this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-1.05,.2);this.arms[0].userData.elbow.rotation.x=lerp(this.arms[0].userData.elbow.rotation.x,-.5,.2);}
+    // clavicle: shoulder rides up and forward as the arm lifts, arm swings slightly out when raised
+    this.arms.forEach(a=>{const b=a.userData.base;if(!b)return;const rx=a.rotation.x,lift=Math.max(0,-rx-.45);a.position.y=b.y+lift*.04;a.position.z=b.z-rx*.018+lift*.012;a.rotation.z=a.userData.abd*(1+lift*.6);});}
   update(dt){
     const p=this.g.position;
     if(this.talk>0||this.stare>0){this.talk=Math.max(0,this.talk-dt);this.stare=Math.max(0,this.stare-dt);this.face(P.x,P.z);this.turn(dt,5);this.anim(dt,false);
@@ -2579,8 +2586,9 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='3.6';
+const GAME_VERSION='3.7';
 const PATCHES=[
+  {v:'3.7',title:'Real shoulders',items:['Everyone has actual shoulders now: a sloped trap from the neck and a deltoid the arm grows out of, so arms don\'t look stuck on the side','The shoulder stays attached to the body and stretches smoothly when the arm swings or lifts','Shoulders shrug up and forward when an arm is raised, like a real collarbone','Arms hang slightly out from the body (more for Jake\'s belly)','New walk: arms swing with the elbow bending more on the forward swing and dragging behind, plus a little upper-body twist']},
   {v:'3.6',title:'Smooth bodies + real grips',items:['Everyone\'s arms and legs are one smooth piece now: elbows, knees and shoulders bend smoothly, no more ball joints','Max actually grips what he holds: fingers and thumb wrap around the vape, cart, beer and every tool','Tools rebuilt to sit in your fist the right way (pliers, hammer, drill, tacker)','Jake grips his clipboard, Brayden grips his tape and screwdriver','Brayden and Ethan hold out the vape and cart in their hand when they bring it to you','Workdays are 3 real minutes longer (about 13 minutes now)']},
   {v:'3.5',title:'Rotation fix',items:['Fixed the screen getting stuck half-width after turning your phone sideways']},
   {v:'3.4',title:'Panels',items:['Load centers are now just called panels / breaker panels']},
