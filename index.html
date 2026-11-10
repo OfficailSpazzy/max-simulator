@@ -482,7 +482,7 @@ const DPR=window.devicePixelRatio||1,PR={high:Math.min(DPR,2),medium:Math.min(DP
 const SHADOW={high:4096,medium:2048,low:1024},GRASS={high:7000,medium:3200,low:900};
 const renderer=new THREE.WebGLRenderer({antialias:Q==='low',powerPreference:'high-performance'});
 renderer.setPixelRatio(PR[Q]);
-renderer.setSize(innerWidth,innerHeight);
+renderer.setSize(innerWidth,innerHeight,false);
 renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.08;
@@ -2528,7 +2528,7 @@ function buildComposer(){
   applyQuality();
 }
 function applyQuality(){
-  renderer.setPixelRatio(PR[Q]);renderer.setSize(innerWidth,innerHeight);
+  renderer.setPixelRatio(PR[Q]);renderer.setSize(innerWidth,innerHeight,false);
   if(composer){composer.setPixelRatio(PR[Q]);composer.setSize(innerWidth,innerHeight);
     const hi=Q==='high';if(passSSAO){passSSAO.enabled=hi;passRender.enabled=!hi;}
     if(passBloom)passBloom.enabled=Q!=='low';
@@ -2542,8 +2542,9 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='3.4';
+const GAME_VERSION='3.5';
 const PATCHES=[
+  {v:'3.5',title:'Rotation fix',items:['Fixed the screen getting stuck half-width after turning your phone sideways']},
   {v:'3.4',title:'Panels',items:['Load centers are now just called panels / breaker panels']},
   {v:'3.3',title:'Landscape only',items:['On phones the game only plays sideways now','Hold your phone upright and the game pauses with a turn-your-phone screen','On Android the screen locks sideways once you tap in']},
   {v:'3.2',title:'Carton + training fixes',items:['Carton flaps are attached to the box now, hinged off the top edges on all four sides','Trailer shelves use the same full cartons','Training: Jake starts right next to you, talks, then walks you to the trailer','If you fall behind, Jake stops and waits for you']},
@@ -2600,7 +2601,12 @@ function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-last
   if(S.phase==='work'){const tx=Math.round((S.mode==='play'?P.x:camera.position.x)/2)*2,tz=Math.round((S.mode==='play'?P.z:camera.position.z)/2)*2;
     sun.target.position.set(clamp(tx,-12,12),0,clamp(tz,-6,12));sun.position.copy(sun.target.position).addScaledVector(sunDir,90);sun.target.updateMatrixWorld();}
   if(composer&&Q!=='low'){passGrade.uniforms.time.value=(now/1000)%100;composer.render(dt);}else renderer.render(scene,camera);}
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();applyQuality();});
+let _vw=0,_vh=0;function fitView(){const w=innerWidth,h=innerHeight;if(w===_vw&&h===_vh)return;_vw=w;_vh=h;try{scrollTo(0,0);}catch(e){}camera.aspect=w/h;camera.updateProjectionMatrix();applyQuality();}
+function fitSoon(){fitView();[80,250,600,1200].forEach(t=>setTimeout(fitView,t));}
+addEventListener('resize',fitSoon);addEventListener('orientationchange',fitSoon);
+if(window.visualViewport)visualViewport.addEventListener('resize',fitSoon);
+try{screen.orientation&&screen.orientation.addEventListener('change',fitSoon);}catch(e){}
+setInterval(fitView,1000);
 scene.updateMatrixWorld(true);
 requestAnimationFrame(frame);
 const sv=loadSave();if(sv){$('btnCont').hidden=false;$('btnCont').textContent=`Continue · Day ${sv.day}`;}
