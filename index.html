@@ -299,10 +299,16 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
   .inv{gap:6px}
 }
 @media (prefers-reduced-motion:reduce){#haze,.jake.watching .eye,.toast{animation:none}}
+#rotate{display:none;position:fixed;inset:0;z-index:9999;background:#12110d;color:#f2e6c8;flex-direction:column;align-items:center;justify-content:center;gap:18px;font:600 18px/1.4 system-ui,sans-serif;text-align:center;padding:24px}
+#rotate .ph{width:64px;height:108px;border:4px solid #f5c542;border-radius:12px;animation:rot 2s ease-in-out infinite}
+#rotate small{opacity:.7;font-weight:400;font-size:14px}
+@keyframes rot{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait){body.touch #rotate{display:flex}}
 </style>
 
 </head>
 <body>
+<div id="rotate"><div class="ph"></div><div>Turn your phone sideways</div><small>Max Simulator only plays in landscape</small></div>
 <div id="game"></div>
 <div id="haze"></div><div id="vig"></div><div id="flash"></div>
 
@@ -452,6 +458,10 @@ kbd{font-family:var(--mono);font-size:9px;border:1px solid var(--line);border-ra
 const $=id=>document.getElementById(id);
 const isTouch=(window.matchMedia&&matchMedia('(pointer: coarse)').matches)||('ontouchstart' in window);
 if(isTouch) document.body.classList.add('touch');
+const isPortrait=()=>isTouch&&innerHeight>innerWidth;
+function lockLand(){try{const d=document.documentElement;const go=()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(e){}};
+  if(!document.fullscreenElement&&d.requestFullscreen){d.requestFullscreen({navigationUI:'hide'}).then(go).catch(go);}else go();}catch(e){}}
+if(isTouch){addEventListener('touchend',function once(){lockLand();removeEventListener('touchend',once);},{passive:true});}
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t;
 const rand=(a,b)=>a+Math.random()*(b-a), pick=a=>a[(Math.random()*a.length)|0];
 const angDiff=(a,b)=>{let d=(a-b)%(Math.PI*2);if(d>Math.PI)d-=Math.PI*2;if(d<-Math.PI)d+=Math.PI*2;return d;};
@@ -2532,8 +2542,9 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='3.2';
+const GAME_VERSION='3.3';
 const PATCHES=[
+  {v:'3.3',title:'Landscape only',items:['On phones the game only plays sideways now','Hold your phone upright and the game pauses with a turn-your-phone screen','On Android the screen locks sideways once you tap in']},
   {v:'3.2',title:'Carton + training fixes',items:['Carton flaps are attached to the box now, hinged off the top edges on all four sides','Trailer shelves use the same full cartons','Training: Jake starts right next to you, talks, then walks you to the trailer','If you fall behind, Jake stops and waits for you']},
   {v:'3.1',title:'Grey nail-ons + Jake\'s pay rant',items:['Boxes now come as cartons packed full of grey single gang nail-ons, standing side by side','Everything that said blue boxes now says single gang nail-ons','Jake is technically just an apprentice. Five years with the company and he will tell you all about how he should be on journeyman pay']},
   {v:'3.0',title:'Stash your materials',items:['Carry supplies into a unit and press G (STASH on phones) to drop them in a pile','Boxes and wire in that unit pull from the pile automatically, so you can bring in everything first and work after','Walk up to a pile and press E to pick stuff back up','The trailer shows what your ticket still needs after counting your piles','Grey single gang nail-ons come in a cardboard carton now, in your hands and in piles']},
@@ -2581,6 +2592,7 @@ resetNPCs();setSun(START_T,false);buildComposer();applyQuality();setTimeout(()=>
 
 let last=performance.now();
 function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(isPortrait()){last=now;return;}
   try{tick(dt);}catch(e){console.error(e);}
   if(S.mode==='title'){const t=now/1000;camera.position.set(Math.sin(t*.06)*28,8.5,24+Math.cos(t*.06)*6);camera.lookAt(0,1,-2);sky.position.copy(camera.position);}
   grassTime.value=now/1000;
