@@ -467,7 +467,7 @@ const rand=(a,b)=>a+Math.random()*(b-a), pick=a=>a[(Math.random()*a.length)|0];
 const angDiff=(a,b)=>{let d=(a-b)%(Math.PI*2);if(d>Math.PI)d-=Math.PI*2;if(d<-Math.PI)d+=Math.PI*2;return d;};
 
 /* ================= STATE ================= */
-const RENT=45, WAGE=90, BOX_PAY=4, START_T=420, END_T=930, TS=.85;
+const RENT=45, WAGE=90, BOX_PAY=4, START_T=420, END_T=930, TS=.654;
 const fresh=()=>({mode:'title',phase:'work',day:1,money:120,stamina:85,strikes:0,vape:20,cart:8,beers:6,
   hungover:false,boost:0,time:START_T,kit:false,boots:false,tank:false,ticket:[],beersTonight:0,
   boxPay:0,bonus:0,fines:0,wiredToday:0,totalWired:0,siteDone:false,warned15:false,warnedGas:false,jakeNext:35,hit:null,
@@ -1400,6 +1400,21 @@ function refreshStand(k){const st=toolStands[k];if(!st)return;const t=TOOLS.find
 function refreshAllStands(){TOOLS.forEach(t=>refreshStand(t.k));}
 
 /* ================= CHARACTERS ================= */
+
+/* ================= SMOOTH SKINNED LIMBS ================= */
+const _skinMats=new Map();
+function skinMat(m){if(_skinMats.has(m))return _skinMats.get(m);const c=m.clone();c.skinning=true;_skinMats.set(m,c);return c;}
+// prof: [[y,r],...] top->bottom in pivot space. bones: [root(body-level), upper, lower]; joint at jy.
+function limbGeo(prof,seg,jy,blend,topY){const pts=[];for(let i=prof.length-1;i>=0;i--)pts.push(new THREE.Vector2(Math.max(.0005,prof[i][1]),prof[i][0]));
+  const g=new THREE.LatheGeometry(pts,seg);const pos=g.attributes.position,n=pos.count,si=new Uint16Array(n*4),sw=new Float32Array(n*4);
+  for(let v=0;v<n;v++){const y=pos.getY(v);let w0=topY==null?0:clamp((y-topY)/.09,0,1)*.85;
+    const t=clamp((jy+blend-y)/(2*blend),0,1),wl=t*t*(3-2*t);const rest=1-w0;
+    si[v*4]=0;si[v*4+1]=1;si[v*4+2]=2;sw[v*4]=w0;sw[v*4+1]=rest*(1-wl);sw[v*4+2]=rest*wl;}
+  g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));return g;}
+function makeLimb(parentBody,pivot,joint,parts,jy,blend,topY){
+  const b0=new THREE.Bone(),b1=new THREE.Bone(),b2=new THREE.Bone();b0.position.copy(pivot.position);parentBody.add(b0);pivot.add(b1);joint.add(b2);
+  const meshes=parts.map(([prof,mat,seg])=>{const m=new THREE.SkinnedMesh(limbGeo(prof,seg||22,jy,blend,topY),skinMat(mat));m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;pivot.add(m);return m;});
+  return {bones:[b0,b1,b2],meshes,bind(){const sk=new THREE.Skeleton([b0,b1,b2]);meshes.forEach(m=>m.bind(sk));}};}
 function makeGuy(o){
   const g=new THREE.Group(),body=new THREE.Group();g.add(body);
   const skin=std(o.skin||0xd6a47c,{r:.5}),shirt=std(o.shirt,{r:.92}),pants=std(o.pants||0x3a4c6e,{r:.9}),boot=std(o.shoe||0x5a3a22,{r:.62}),sole=std(0x1e1a16,{r:.85}),
@@ -1407,9 +1422,8 @@ function makeGuy(o){
   const prof=o.belly?BELLY:TORSO,zs=o.belly?.74:o.slim?.6:.66,xs=o.slim?1.02:1.12;
   // legs: hip pivot -> thigh, knee pivot -> shin + boot
   const legs=[-.095,.095].map(x=>{const l=new THREE.Group();l.position.set(x,.9,0);body.add(l);
-    addM(capG(.08,.072,.3),pants,l,0,-.2,0);
     const kn=new THREE.Group();kn.position.y=-.43;l.add(kn);l.userData.knee=kn;
-    addM(capG(.064,.056,.3),pants,kn,0,-.2,0);
+    l.userData.limb=makeLimb(body,l,kn,[[[[.1,.0],[.085,.05],[.04,.08],[-.04,.088],[-.16,.082],[-.3,.07],[-.4,.062],[-.46,.06],[-.56,.063],[-.66,.056],[-.74,.05],[-.8,.05]],pants,24]],-.43,.06,.0);
     addM(RB(.12,.12,.15,.04),boot,kn,0,-.39,.0);addM(RB(.115,.09,.17,.04),boot,kn,0,-.42,.075);
     addM(RB(.13,.03,.3,.012),sole,kn,0,-.465,.04);
     addM(latheG([.07,0,.074,.02,.07,.04]),pants,kn,0,-.36,0,1,1,1.05);
@@ -1434,16 +1448,19 @@ function makeGuy(o){
     addM(new THREE.TubeGeometry(c,40,.0045,6,true),std(0x141210,{r:.6}),body);}
   // arms: shoulder pivot -> upper arm, elbow pivot -> forearm + hand
   const arms=[-1,1].map(sx=>{const a=new THREE.Group();a.position.set(sx*.235,1.43,0);body.add(a);
-    addM(sphG(.058,14,10),shirt,a,0,-.01,0,1,1,.95);
-    addM(capG(.056,.05,.2),shirt,a,0,-.14,0);
-    const el=new THREE.Group();el.position.y=-.27;el.rotation.x=-.18;a.add(el);a.userData.elbow=el;
-    addM(capG(.052,.042,.2),o.long?shirt:skin,el,0,-.13,0);
-    if(!o.long)addM(new THREE.CylinderGeometry(.058,.058,.07,14,1,true),shirt,a,0,-.21,0);
+    const el=new THREE.Group();el.position.y=-.27;a.add(el);a.userData.elbow=el;
+    const ARM=[[.045,.0],[.036,.036],[.012,.055],[-.04,.058],[-.13,.054],[-.22,.049],[-.27,.046],[-.33,.046],[-.42,.04],[-.5,.033],[-.56,.03],[-.585,.026]];
+    const parts=o.long?[[ARM,shirt]]:[[ARM.filter(p=>p[0]>-.2).concat([[-.215,.054],[-.226,.0545]]).map(([y,r])=>[y,r+(y<.02?.004:.003)]),shirt],[ARM.filter(p=>p[0]<-.12),skin]];
+    a.userData.limb=makeLimb(body,a,el,parts,-.27,.055,-.0);
     const hd=new THREE.Group();hd.position.set(0,-.29,.005);el.add(hd);a.userData.hand=hd;
     addM(RB(.075,.09,.04,.018),skin,hd,0,-.03,0);
-    for(let f=0;f<4;f++)addM(capG(.009,.008,.05,8),skin,hd,-.026+f*.017,-.1,.004,1,1,1,.15);
-    addM(capG(.011,.009,.045,8),skin,hd,sx*-.042,-.045,.018,1,1,1,.3,0,sx*.6);
+    const fing=[];for(let f=0;f<4;f++){const k1=new THREE.Group();k1.position.set(-.026+f*.017,-.07,.002);hd.add(k1);addM(capG(.0095,.0088,.026,10),skin,k1,0,-.018,0);
+      const k2=new THREE.Group();k2.position.y=-.036;k1.add(k2);addM(capG(.0088,.008,.02,10),skin,k2,0,-.014,0);fing.push([k1,k2]);}
+    const th=new THREE.Group();th.position.set(sx*-.034,-.025,.016);th.rotation.set(.3,0,sx*.6);hd.add(th);addM(capG(.011,.009,.04,10),skin,th,0,-.022,0);
+    hd.userData.fing=fing;hd.userData.thumb=th;
     return a;});
+  // bind limbs in a straight rest pose
+  g.updateMatrixWorld(true);[...legs,...arms].forEach(x=>x.userData.limb.bind());arms.forEach(a=>a.userData.elbow.rotation.x=-.18);
   // neck + head
   addM(new THREE.CylinderGeometry(.052,.06,.12,16),skin,body,0,1.55,0);
   const head=new THREE.Group();head.position.y=1.71;body.add(head);
@@ -1478,13 +1495,22 @@ function makeGuy(o){
     addM(capG(.02,.02,.24,10),hm,head,0,.19,-.005,1,1,1,Math.PI/2);
     addM(RB(.06,.06,.01,.005),hm,head,0,.12,.152,1,1,1,-.3);}
   if(o.sticker)addM(RB(.05,.04,.006,.004),std(o.sticker,{r:.5}),head,.1,.13,.08,1,1,1,0,.7,0);
-  if(o.clip){const hd=arms[1].userData.elbow;addM(RB(.2,.28,.012,.006),std(0x8a6a3a,{r:.7}),hd,0,-.36,.1);addM(RB(.17,.22,.004,.002),std(0xf4f2ea,{r:.9}),hd,0,-.37,.108);addM(RB(.06,.025,.02,.006),M.steel,hd,0,-.23,.108);}
-  if(o.tape){const hd=arms[1].userData.hand;addM(RB(.07,.07,.035,.014),std(0xe9ecef,{r:.35}),hd,0,-.07,.035);addM(new THREE.CylinderGeometry(.022,.022,.037,16),std(0x2a62c9,{r:.4}),hd,0,-.07,.035,1,1,1,Math.PI/2);
-    addM(RB(.012,.11,.012,.004),std(0x2a62c9,{r:.4}),arms[0].userData.hand,0,-.1,.03);addM(new THREE.CylinderGeometry(.003,.003,.08,6),M.steel,arms[0].userData.hand,0,-.19,.03);}
+  if(o.clip){const hd=arms[1].userData.hand;fist(hd,1);hd.rotation.y=Math.PI/2;const cb=new THREE.Group();cb.position.set(0,-.05,.034);hd.add(cb);
+    addM(RB(.28,.2,.012,.006),std(0x8a6a3a,{r:.7}),cb,-.1,-.08,0);addM(RB(.22,.17,.004,.002),std(0xf4f2ea,{r:.9}),cb,-.11,-.085,.008);addM(RB(.06,.025,.02,.006),M.steel,cb,.005,-.0,.008);}
+  if(o.tape){const hd=arms[1].userData.hand;fist(hd,.7);addM(RB(.035,.07,.07,.014),std(0xe9ecef,{r:.35}),hd,0,-.075,.05);addM(new THREE.CylinderGeometry(.022,.022,.037,16),std(0x2a62c9,{r:.4}),hd,0,-.075,.05,1,1,1,0,0,Math.PI/2);
+    const h0=arms[0].userData.hand;fist(h0,1);const sd=new THREE.Group();sd.position.set(0,-.06,.03);h0.add(sd);addM(capG(.011,.011,.09,10),std(0x2a62c9,{r:.4}),sd,0,0,0,1,1,1,0,0,Math.PI/2);addM(new THREE.CylinderGeometry(.003,.003,.08,6),M.steel,sd,.09,0,0,1,1,1,0,0,Math.PI/2);h0.userData.tool=sd;}
+  // props the crew can hand you (vape / cart), held in the right fist
+  {const h0=arms[0].userData.hand,pr=new THREE.Group();pr.position.set(0,-.06,.03);pr.visible=false;h0.add(pr);
+    const vp=new THREE.Group();addM(RB(.1,.03,.017,.008),std(0x1d1d22,{r:.3,m:.5}),vp);addM(RB(.012,.031,.018,.003),basic(0x4fd6cf),vp,-.02,0,0);addM(RB(.02,.016,.01,.004),std(0x333333,{r:.4}),vp,.058,0,0);pr.add(vp);
+    const ct=new THREE.Group();addM(new THREE.CylinderGeometry(.009,.009,.08,14),std(0xb8bcc4,{m:.9,r:.25}),ct,0,0,0,1,1,1,0,0,Math.PI/2);addM(new THREE.CylinderGeometry(.0095,.0095,.035,14),std(0xd99a2b,{transparent:true,opacity:.85,e:0x5a3000,ei:.6}),ct,.057,0,0,1,1,1,0,0,Math.PI/2);addM(new THREE.CylinderGeometry(.006,.008,.014,12),M.dark,ct,.081,0,0,1,1,1,0,0,-Math.PI/2);pr.add(ct);
+    h0.userData.props={g:pr,vape:vp,cart:ct};}
   const tag=canvasSprite(o.name,o.tagColor||'#f2ead8');tag.position.y=2.28;g.add(tag);
   const hit=new THREE.Mesh(geo,M.hit);hit.scale.set(.75,1.9,.75);hit.position.y=.95;g.add(hit);
   scene.add(g);return {g,body,legs,arms,head,hit};
 }
+function fist(hd,amt){const f=hd.userData.fing;if(!f)return;f.forEach(([k1,k2],i)=>{k1.rotation.x=-1.25*amt;k2.rotation.x=-1.55*amt;});const th=hd.userData.thumb;th.rotation.set(.3+.5*amt,0,(hd.parent.parent.position.x>0?1:-1)*(.6+.4*amt));}
+function showProp(n,kind){const h=n.arms[0].userData.hand,p=h.userData.props;if(!p)return;const on=!!kind;if(p.g.visible===on&&p.kind===kind)return;p.kind=kind;p.g.visible=on;p.vape.visible=kind==='vape';p.cart.visible=kind==='cart';
+  if(h.userData.tool)h.userData.tool.visible=!on;fist(h,on||h.userData.tool?1:0);}
 
 /* ================= NAVIGATION (grid A*) ================= */
 const NG={x0:-40,z0:-30,cs:.25,w:320,h:256};
@@ -1546,7 +1572,8 @@ class NPC{
   goTo(x,z){const p=findPath(this.g.position.x,this.g.position.z,x,z);this.path=p?p.slice(1):[];this.dest=[x,z];this.stuckT=0;}
   turn(dt,r){this.yaw+=clamp(angDiff(this.targetYaw,this.yaw),-r*dt,r*dt);this.g.rotation.y=this.yaw;}
   face(x,z){this.targetYaw=Math.atan2(x-this.g.position.x,z-this.g.position.z);}
-  anim(dt,walking){this.walkT+=dt*(walking?7.5:0);this.breath+=dt*1.6;const sw=walking?Math.sin(this.walkT)*.55:0;
+  anim(dt,walking){if(this.offer&&S.tut<0)this.offer=null;if(this.offer==='cart'&&(S.cartHits||0)>(tutBase.c||0)&&tutBase.arrived)this.offer=null;showProp(this,this.offer);
+    this.walkT+=dt*(walking?7.5:0);this.breath+=dt*1.6;const sw=walking?Math.sin(this.walkT)*.55:0;
     this.legs[0].rotation.x=lerp(this.legs[0].rotation.x,sw,.3);this.legs[1].rotation.x=lerp(this.legs[1].rotation.x,-sw,.3);
     this.legs.forEach((l,i)=>{const k=l.userData.knee;if(k)k.rotation.x=lerp(k.rotation.x,walking?Math.max(0,Math.sin(this.walkT+(i?Math.PI:0)+1.4))*.95:(this.working?.05:0),.3);});
     this.arms.forEach(a=>{const el=a.userData.elbow;if(el)el.rotation.x=lerp(el.rotation.x,this.working&&!walking?-.9:walking?-.35:-.18,.15);});
@@ -1554,7 +1581,8 @@ class NPC{
     this.head.rotation.x=lerp(this.head.rotation.x,this.working&&!walking?-.35:0,.1);
     if(this.working&&!walking){const t=performance.now()/1000;this.arms[1].rotation.x=lerp(this.arms[1].rotation.x,-1.7+Math.sin(t*7)*.22,.2);this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-1.35+Math.sin(t*5)*.1,.2);}
     else if(this.talk>0&&this.isJake){const t=performance.now()/1000;this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-.9+Math.sin(t*4)*.35,.2);this.arms[1].rotation.x=lerp(this.arms[1].rotation.x,-.5,.2);}
-    else{this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-sw*.8,.3);this.arms[1].rotation.x=lerp(this.arms[1].rotation.x,this.isJake&&!walking?-.5:sw*.8,.3);}}
+    else{this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-sw*.8,.3);this.arms[1].rotation.x=lerp(this.arms[1].rotation.x,this.isJake&&!walking?-.5:sw*.8,.3);}
+    if(this.offer&&!walking){this.arms[0].rotation.x=lerp(this.arms[0].rotation.x,-1.05,.2);this.arms[0].userData.elbow.rotation.x=lerp(this.arms[0].userData.elbow.rotation.x,-.5,.2);}}
   update(dt){
     const p=this.g.position;
     if(this.talk>0||this.stare>0){this.talk=Math.max(0,this.talk-dt);this.stare=Math.max(0,this.stare-dt);this.face(P.x,P.z);this.turn(dt,5);this.anim(dt,false);
@@ -1607,45 +1635,54 @@ class NPC{
 /* ================= VIEWMODEL & SMOKE ================= */
 const vm=new THREE.Group();camera.add(vm);
 const vmArm=new THREE.Group();vm.add(vmArm);
-const grip=new THREE.Group();
+const grip=new THREE.Group();const FP={r:-1};
+const _up=new THREE.Vector3(0,1,0),_fd=new THREE.Vector3();
+function placeSeg(seg,a,b){const [c,j]=seg;_fd.subVectors(b,a);const L=_fd.length();c.position.copy(a).add(b).multiplyScalar(.5);c.scale.set(c.userData.r,L,c.userData.r);c.quaternion.setFromUnitVectors(_up,_fd.normalize());j.position.copy(a);}
+// wrap the fingers around a vertical object of radius r held in the fist
+function setGrip(r){if(Math.abs(FP.r-r)<1e-4||!FP.fingers)return;FP.r=r;const cx=-.021-r,cz=-.074,R=r+.0102;grip.position.set(cx,0,cz);
+  const P=(phi,y,rr=R)=>new THREE.Vector3(cx+Math.cos(phi)*rr,y,cz+Math.sin(phi)*rr);
+  FP.fingers.forEach(f=>{const k=new THREE.Vector3(-.004,f.y,-.103),ph0=Math.atan2(k.z-cz,k.x-cx),D=Math.min(1.05,.026/R);
+    const pts=[k,P(ph0-D*.9,f.y),P(ph0-D*1.9,f.y),P(ph0-D*2.75,f.y)];f.segs.forEach((s,i)=>placeSeg(s,pts[i],pts[i+1]));f.tip.position.copy(pts[3]);f.tip.scale.setScalar(f.r*.9);});
+  const tb=new THREE.Vector3(-.016,.036,-.03),t1=P(1.25,.047,R+.002),t2=P(2.05,.05,R+.002),t3=P(2.7,.05,R+.001);
+  placeSeg(FP.thumb.segs[0],tb,t1);placeSeg(FP.thumb.segs[1],t1,t2);placeSeg(FP.thumb.segs[2],t2,t3);FP.thumb.tip.position.copy(t3);}
+const GRIP_R={pliers:.0135,hammer:.0135,drill:.02,stapler:.017,vape:.0135,cart:.0095,beer:.033};
 {const sl=std(0xffffff,{map:T.plaid,r:.95}),sk=std(0xd6a47c,{r:.5}),nail=std(0xe8c9b4,{r:.3});
  addM(capG(.05,.046,.34,18),sl,vmArm,0,-.015,.21,1,1,1,Math.PI/2);
  addM(new THREE.CylinderGeometry(.049,.049,.035,18),std(0x5a1818,{r:.9}),vmArm,0,-.015,.04,1,1,1,Math.PI/2);
  addM(capG(.034,.032,.05,14),sk,vmArm,0,-.012,.0,1,.9,1,Math.PI/2);
- addM(RB(.082,.04,.085,.018),sk,vmArm,0,-.004,-.07);
- for(let k=0;k<4;k++){const f=new THREE.Group();f.position.set(-.028+k*.019,.004,-.108);f.rotation.x=-.55;vmArm.add(f);
-   addM(capG(.0095,.009,.028,8),sk,f,0,0,-.016,1,1,1,Math.PI/2);const f2=new THREE.Group();f2.position.z=-.034;f2.rotation.x=-.9;f.add(f2);
-   addM(capG(.0088,.008,.022,8),sk,f2,0,0,-.012,1,1,1,Math.PI/2);addM(RB(.012,.003,.01,.001),nail,f2,0,.008,-.02);}
- addM(capG(.012,.01,.045,10),sk,vmArm,.047,.006,-.058,1,1,1,Math.PI/2,-.55,0);
- grip.position.set(0,.02,-.09);vmArm.add(grip);}
+ addM(RB(.042,.088,.09,.02),sk,vmArm,0,0,-.058);
+ addM(sphG(.024,12,10),sk,vmArm,.004,.028,-.1,1,1,1);
+ const unitC=new THREE.CylinderGeometry(1,1,1,10,1,true),unitS=sphG(1,10,8);
+ const mkSeg=(r)=>{const c=new THREE.Mesh(unitC,sk),j=new THREE.Mesh(unitS,sk);c.userData.r=r;j.scale.setScalar(r);vmArm.add(c);vmArm.add(j);return [c,j];};
+ FP.fingers=[.03,.0105,-.009,-.028].map((y,i)=>({y,r:.0098-i*.0005,segs:[mkSeg(.0098-i*.0005),mkSeg(.0092-i*.0005),mkSeg(.0085-i*.0005)],tip:mkSeg(.0082-i*.0005)[1]}));
+ FP.thumb={segs:[mkSeg(.0125),mkSeg(.0112),mkSeg(.0104)],tip:mkSeg(.0098)[1]};
+ vmArm.add(grip);setGrip(.015);}
+
 const items={};
-{const hm=new THREE.Group();const hh=new THREE.Mesh(geo,std(0x2a2a2a,{r:.6}));hh.scale.set(.026,.026,.2);hh.position.z=.02;hm.add(hh);
- const grp=new THREE.Mesh(geo,std(0x1d5fbf,{r:.6}));grp.scale.set(.03,.03,.09);grp.position.z=.07;hm.add(grp);
- const head=new THREE.Mesh(geo,M.steel);head.scale.set(.03,.03,.11);head.position.set(0,0,-.08);head.rotation.x=Math.PI/2;hm.add(head);
- const claw=new THREE.Mesh(geo,M.steel);claw.scale.set(.02,.06,.02);claw.position.set(0,-.05,-.09);claw.rotation.x=-.5;hm.add(claw);
- hm.rotation.x=-1.2;items.hammer=hm;}
-{const dr=new THREE.Group();const tl=std(0x1f8a83,{r:.4}),bk=std(0x1b1c1f,{r:.55});
- const body=new THREE.Mesh(rgeo,tl);body.scale.set(.045,.06,.15);body.position.set(0,.05,-.03);dr.add(body);
- const hd=new THREE.Mesh(rgeo,bk);hd.scale.set(.04,.1,.045);hd.position.set(0,-.005,.02);dr.add(hd);
- const bat=new THREE.Mesh(rgeo,bk);bat.scale.set(.06,.04,.08);bat.position.set(0,-.06,.03);dr.add(bat);
- const ch=new THREE.Mesh(new THREE.CylinderGeometry(.013,.013,.05,10),M.steel);ch.rotation.x=Math.PI/2;ch.position.set(0,.05,-.13);dr.add(ch);dr.userData.chuck=ch;items.drill=dr;
- const sg=new THREE.Group();const sb=new THREE.Mesh(rgeo,std(0x6d737a,{r:.45,m:.5}));sb.scale.set(.04,.055,.15);sb.position.set(0,.03,-.02);sg.add(sb);
- const sh=new THREE.Mesh(rgeo,std(0xff6a12,{r:.5}));sh.scale.set(.035,.025,.12);sh.position.set(0,.075,.0);sh.rotation.x=.18;sg.add(sh);items.stapler=sg;}
-{const pl=new THREE.Group();const red=std(0xc8281f,{r:.5}),blue=std(0x1f4fb0,{r:.5});
- const h1=new THREE.Mesh(geo,red);h1.scale.set(.016,.014,.14);h1.position.set(-.008,0,.03);h1.rotation.y=.06;pl.add(h1);
- const h2=new THREE.Mesh(geo,blue);h2.scale.set(.016,.014,.14);h2.position.set(.008,-.004,.03);h2.rotation.y=-.06;pl.add(h2);
- const hd=new THREE.Mesh(geo,M.steel);hd.scale.set(.03,.016,.06);hd.position.set(0,0,-.07);pl.add(hd);
- const jaw=new THREE.Mesh(geo,M.steel);jaw.scale.set(.022,.014,.03);jaw.position.set(0,0,-.11);pl.add(jaw);
- pl.rotation.x=-.3;items.pliers=pl;
- const vg=new THREE.Group();const b=new THREE.Mesh(geo,std(0x1d1d22,{r:.3,m:.5}));b.scale.set(.045,.095,.022);vg.add(b);
- const st=new THREE.Mesh(geo,basic(0x4fd6cf));st.scale.set(.046,.012,.023);st.position.y=-.02;vg.add(st);
- const mp=new THREE.Mesh(geo,std(0x333333,{r:.4}));mp.scale.set(.02,.022,.012);mp.position.y=.058;vg.add(mp);vg.position.y=.04;items.vape=vg;
- const cg=new THREE.Group();const bat=new THREE.Mesh(new THREE.CylinderGeometry(.009,.009,.08,14),std(0xb8bcc4,{m:.9,r:.25}));cg.add(bat);
- const gl=new THREE.Mesh(new THREE.CylinderGeometry(.0095,.0095,.035,14),std(0xd99a2b,{transparent:true,opacity:.85,e:0x5a3000,ei:.6,r:.1}));gl.position.y=.057;cg.add(gl);
- const tip=new THREE.Mesh(new THREE.CylinderGeometry(.006,.008,.014,12),M.dark);tip.position.y=.081;cg.add(tip);
- const led=new THREE.Mesh(new THREE.SphereGeometry(.004,6,6),basic(0x9be15d));led.position.set(0,-.03,.009);cg.add(led);cg.position.y=.04;items.cart=cg;
- const bg=new THREE.Group();const can=new THREE.Mesh(new THREE.CylinderGeometry(.033,.033,.12,18),std(0xc9ced6,{m:.85,r:.25}));bg.add(can);
- const band=new THREE.Mesh(new THREE.CylinderGeometry(.0335,.0335,.05,18),std(0x1b4aa0,{m:.6,r:.3}));band.position.y=.005;bg.add(band);bg.position.y=.03;items.beer=bg;
+{const blk=std(0x1b1c1f,{r:.6}),red=std(0xc8281f,{r:.55}),blue=std(0x1f4fb0,{r:.55});
+ // hammer: rubber grip in the fist, steel head up top
+ const hm=new THREE.Group();addM(new THREE.CylinderGeometry(.0135,.0145,.11,14),std(0x1d5fbf,{r:.6}),hm,0,-.005,0);addM(new THREE.CylinderGeometry(.011,.012,.13,12),std(0x2a2a2a,{r:.5}),hm,0,.11,0);
+ addM(RB(.034,.034,.1,.008),M.steel,hm,0,.185,-.012);addM(new THREE.CylinderGeometry(.017,.017,.02,14),M.steel,hm,0,.185,-.068,1,1,1,Math.PI/2);
+ addM(RB(.026,.016,.07,.006),M.steel,hm,0,.198,.06,1,1,1,-.45);items.hammer=hm;
+ // drill: pistol grip in the fist, body on top pointing forward
+ const dr=new THREE.Group(),tl=std(0x1f8a83,{r:.4});addM(RB(.034,.12,.044,.012),blk,dr,0,.0,.0,1,1,1,-.15);
+ addM(RB(.05,.065,.17,.02),tl,dr,0,.09,-.04);addM(RB(.06,.045,.085,.012),blk,dr,0,-.08,.006);
+ const ch=addM(new THREE.CylinderGeometry(.014,.016,.05,12),M.steel,dr,0,.09,-.15,1,1,1,Math.PI/2);addM(RB(.012,.02,.014,.004),red,dr,0,.042,-.02);dr.userData.chuck=ch;items.drill=dr;
+ // hammer tacker / stapler
+ const sg=new THREE.Group();addM(RB(.03,.11,.034,.01),std(0xff6a12,{r:.5}),sg,0,0,0);addM(RB(.04,.05,.15,.012),std(0x6d737a,{r:.45,m:.5}),sg,0,.075,-.045);items.stapler=sg;
+ // lineman pliers: both insulated handles in the fist, jaws up
+ const pl=new THREE.Group();addM(RB(.013,.12,.012,.005),red,pl,0,-.005,.007,1,1,1,.05);addM(RB(.013,.12,.012,.005),blue,pl,0,-.005,-.007,1,1,1,-.05);
+ addM(RB(.024,.05,.026,.006),M.steel,pl,0,.078,0);addM(RB(.02,.04,.02,.004),M.steel,pl,0,.118,0);addM(new THREE.CylinderGeometry(.007,.007,.03,10),M.steel,pl,0,.07,0,1,1,1,0,0,Math.PI/2);items.pliers=pl;
+ // disposable vape: body in the fist, mouthpiece sticking out the top
+ const vg=new THREE.Group();addM(RB(.017,.1,.03,.008),std(0x1d1d22,{r:.3,m:.5}),vg,0,.025,0);addM(RB(.018,.012,.031,.003),basic(0x4fd6cf),vg,0,-.012,0);
+ addM(RB(.012,.024,.02,.005),std(0x333333,{r:.4}),vg,0,.087,0);items.vape=vg;
+ // cart on a 510 battery
+ const cg=new THREE.Group();addM(new THREE.CylinderGeometry(.0095,.0095,.085,14),std(0xb8bcc4,{m:.9,r:.25}),cg,0,.0,0);
+ addM(new THREE.CylinderGeometry(.0098,.0098,.035,14),std(0xd99a2b,{transparent:true,opacity:.85,e:0x5a3000,ei:.6,r:.1}),cg,0,.06,0);addM(new THREE.CylinderGeometry(.006,.008,.016,12),M.dark,cg,0,.085,0);
+ addM(new THREE.SphereGeometry(.004,6,6),basic(0x9be15d),cg,-.006,-.03,.007);items.cart=cg;
+ // beer can
+ const bg=new THREE.Group();addM(new THREE.CylinderGeometry(.033,.033,.122,20),std(0xc9ced6,{m:.85,r:.25}),bg,0,.02,0);addM(new THREE.CylinderGeometry(.0335,.0335,.05,20),std(0x1b4aa0,{m:.6,r:.3}),bg,0,.025,0);
+ addM(new THREE.CylinderGeometry(.026,.033,.008,20),std(0xc9ced6,{m:.85,r:.25}),bg,0,.085,0);items.beer=bg;
  Object.values(items).forEach(i=>{i.visible=false;grip.add(i);});}
 const carryVM=new THREE.Group();carryVM.position.set(-.3,-.36,-.62);camera.add(carryVM);
 const carryM={};
@@ -2278,15 +2315,15 @@ const TUT=[
  {obj:()=>'Training with Jake: done',enter(){say('JAKE',"Look at that. One box. Only about a hundred more. Do the whole ticket, then clock out at your truck by 3:30. And don't do anything stupid on my site.",8);tutT=0;
    jake.mode='patrol';jake.path=[];jake.wait=6;S.tutGuide=null;},mark:()=>null,done:()=>tutT>7},
  {obj:()=>tutBase.arrived?`Hit Brayden's vape until your stamina is full (${KEY('V','VAPE')}) · ${Math.round(S.stamina)}/100`:'Brayden is walking over to you',
-  enter(){tutBase.arrived=false;S.stamina=Math.min(S.stamina,34);const b=brayden;if(b.task){b.task.b.claimed=null;b.task=null;}b.working=false;b.mode='visit';b.appT=0;b.repath=0;b.visitTalk=4;
+  enter(){tutBase.arrived=false;S.stamina=Math.min(S.stamina,34);const b=brayden;if(b.task){b.task.b.claimed=null;b.task=null;}b.working=false;b.mode='visit';b.appT=0;b.repath=0;b.visitTalk=4;b.offer='vape';
    b.onArrive=()=>{tutBase.arrived=true;S.borrowVape=true;S.hasVape=true;say('BRAYDEN',"Bro, you look gassed. Here, hit my vape. "+KEY('Press V','Tap VAPE')+". Keep going till you're back to full. When you're low on your own, your laptop at home sells pods.",9);};},
   tick(){if(tutBase.arrived){brayden.talk=Math.max(brayden.talk,1.5);brayden.mode='talk';}},
   mark:()=>null,done:()=>tutBase.arrived&&S.stamina>=99.5&&!S.hit},
  {obj:()=>S.time<tutBase.at?'Keep working your ticket':tutBase.arrived?`Take a hit of Ethan's cart (${KEY('C','CART')}) where Jake can't see`:'Ethan is walking over to you',
-  enter(){S.borrowVape=false;brayden.mode='patrol';brayden.talk=0;brayden.wait=0;say('BRAYDEN',"Better? Keep that one, I got like four more. Back to it before Jake sees us standing around.",5);toast('Unlocked: vape. '+KEY('Press V','Tap VAPE')+' any time you need stamina.','good');
+  enter(){S.borrowVape=false;brayden.offer=null;brayden.mode='patrol';brayden.talk=0;brayden.wait=0;say('BRAYDEN',"Better? Keep that one, I got like four more. Back to it before Jake sees us standing around.",5);toast('Unlocked: vape. '+KEY('Press V','Tap VAPE')+' any time you need stamina.','good');
    tutBase.arrived=false;tutBase.called=false;tutBase.at=Math.max(S.time+45,600);tutBase.c=S.cartHits||0;tutBase.s0=S.strikes;},
   tick(){if(!tutBase.called&&S.time>=tutBase.at){tutBase.called=true;const far=UNITS[2];jake.goTo(far.x+2,far.z+3);jake.mode='patrol';jake.wait=45;
-     const e=ethan;if(e.task){e.task.b.claimed=null;e.task=null;}e.working=false;e.mode='visit';e.appT=0;e.repath=0;e.visitTalk=4;
+     const e=ethan;if(e.task){e.task.b.claimed=null;e.task=null;}e.working=false;e.mode='visit';e.appT=0;e.repath=0;e.visitTalk=4;e.offer='cart';
      e.onArrive=()=>{tutBase.arrived=true;S.borrowCart=true;S.hasCart=true;say('ETHAN',"Yo, Max. Take a hit of this. "+KEY('Hit C','Tap CART')+". It'll help you lock in, you'll wire twice as fast. Just be careful of the smell. Jake's got a nose like a bloodhound, so stay away from him till it fades. And only where he can't see you, porta-john's the safe spot.",12);};}
    if(tutBase.arrived&&!S.hit&&(S.cartHits||0)===tutBase.c){ethan.talk=Math.max(ethan.talk,1.2);ethan.mode='talk';}},
   mark:()=>tutBase.arrived?[JOHN.x,2.95,JOHN.z]:null,done:()=>tutBase.arrived&&((S.cartHits||0)>tutBase.c||S.strikes>tutBase.s0)},
@@ -2374,7 +2411,7 @@ $('phoneBack').addEventListener('click',()=>{phoneWith=null;renderPhone();});
 $('phoneClose').addEventListener('click',phoneClose);
 $('bPhone').addEventListener('pointerdown',e=>{e.preventDefault();phoneOpen();});
 
-const armRest=new THREE.Vector3(.23,-.25,-.36),armMouth=new THREE.Vector3(.06,-.13,-.2);
+const armRest=new THREE.Vector3(.23,-.27,-.38),armMouth=new THREE.Vector3(.05,-.195,-.25);
 let bob=0,wireAnim=0;
 function tick(dt){
   for(let i=puffs.length-1;i>=0;i--){const s=puffs[i],u=s.userData;u.life+=dt;s.position.addScaledVector(u.v,dt);u.v.multiplyScalar(1-dt*.9);u.v.y+=dt*.05;
@@ -2459,12 +2496,12 @@ function tick(dt){
       S.hit=null;}
   }
   // viewmodel: Max's hand
-  const holding=S.hit?S.hit.kind:(S.phase==='work'?(S.tool||'pliers'):null);
-  Object.entries(items).forEach(([k,m])=>m.visible=k===holding);
+  const holding=S.hit?S.hit.kind:(S.phase==='work'?(window.__forceTool||S.tool||'pliers'):null);
+  Object.entries(items).forEach(([k,m])=>m.visible=k===holding);if(holding)setGrip(GRIP_R[holding]||.015);grip.rotation.x=S.hit?0:-.2;
   vm.visible=!!holding;const cc=S.phase==='work'?carrying():null;Object.entries(carryM).forEach(([k,m])=>m.visible=k===cc);carryVM.position.y=-.3+(moving?Math.sin(bob)*.012:0);
   const t=performance.now()/1000;
   if(S.hit){const tt=S.hit.t/S.hit.dur,up=tt<.2?tt/.2:tt>.85?(1-tt)/.15:1;vmArm.position.lerpVectors(armRest,armMouth,up);
-    vmArm.rotation.set(.55*up+(S.hit.kind==='beer'?.6*up:0),.25*up,.2*up);}
+    vmArm.rotation.set(.4*up+(S.hit.kind==='beer'?.75*up:0),.35*up,.12*up);}
   else{wireAnim=lerp(wireAnim,wiring?1:0,.15);
     vmArm.position.set(armRest.x+(moving?Math.cos(bob*.5)*.012:0),armRest.y+(moving?Math.abs(Math.sin(bob*.5))*.012:Math.sin(t*1.4)*.003)+wireAnim*.06,armRest.z-wireAnim*.08);
     if(items.drill.visible)items.drill.userData.chuck.rotation.y+=wireAnim*dt*60;
@@ -2542,8 +2579,9 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='3.5';
+const GAME_VERSION='3.6';
 const PATCHES=[
+  {v:'3.6',title:'Smooth bodies + real grips',items:['Everyone\'s arms and legs are one smooth piece now: elbows, knees and shoulders bend smoothly, no more ball joints','Max actually grips what he holds: fingers and thumb wrap around the vape, cart, beer and every tool','Tools rebuilt to sit in your fist the right way (pliers, hammer, drill, tacker)','Jake grips his clipboard, Brayden grips his tape and screwdriver','Brayden and Ethan hold out the vape and cart in their hand when they bring it to you','Workdays are 3 real minutes longer (about 13 minutes now)']},
   {v:'3.5',title:'Rotation fix',items:['Fixed the screen getting stuck half-width after turning your phone sideways']},
   {v:'3.4',title:'Panels',items:['Load centers are now just called panels / breaker panels']},
   {v:'3.3',title:'Landscape only',items:['On phones the game only plays sideways now','Hold your phone upright and the game pauses with a turn-your-phone screen','On Android the screen locks sideways once you tap in']},
