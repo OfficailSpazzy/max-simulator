@@ -735,7 +735,7 @@ const TIMES={outlet:2.4,switch:2.4,koutlet:2.8,light:3.2,panel:6.5};
 const MOUNT_T={outlet:1.4,switch:1.4,koutlet:1.4,light:1.8,panel:4};
 const LABELS={outlet:'outlet box',switch:'switch box',koutlet:'kitchen outlet',light:'ceiling box',panel:'the panel'};
 const NEED={outlet:['gang','w14'],switch:['gang','w14'],koutlet:['gang','w12'],light:['oct','w14'],panel:['panel',null]};
-const ITEM={gang:'single gang nail-on',oct:'ceiling box',panel:'load center',w14:'14/2',w12:'12/2'};
+const ITEM={gang:'single gang nail-on',oct:'ceiling box',panel:'panel',w14:'14/2',w12:'12/2'};
 const CAP={gang:8,oct:2,panel:1,w14:10,w12:8};
 const capOf=k=>k==='panel'?1:Math.round(CAP[k]*tv('belt'));
 const TOOLS=[
@@ -2075,7 +2075,7 @@ $('shopItems').addEventListener('click',e=>{const b=e.target.closest('button[dat
 const SUPPLY=[
   {id:'gang',name:'Carton of single gang nail-ons',desc:'Outlets, switches, kitchen outlets',unit:'boxes'},
   {id:'oct',name:'Octagon ceiling boxes',desc:'For the ceiling lights',unit:'boxes'},
-  {id:'panel',name:'Load center',desc:'One per unit',unit:'panel'},
+  {id:'panel',name:'Breaker panel',desc:'One per unit',unit:'panel'},
   {id:'w14',name:'14/2 NM-B reel · white',desc:'Outlets, switches, lights',unit:'runs'},
   {id:'w12',name:'12/2 NM-B reel · yellow',desc:'Kitchen counter + fridge',unit:'runs'},
 ];
@@ -2085,13 +2085,13 @@ function renderSupply(){
   $('supplyItems').innerHTML=SUPPLY.map(it=>{const have=S.inv[it.id],full=have>=capOf(it.id);const label=full?'Full':cur&&cur!==it.id?'Swap':cur===it.id?'Top up':'Take';
     return `<div class="item"><b>${it.name}</b><span>${it.desc} · you can carry ${capOf(it.id)} ${it.unit}</span><button type="button" data-id="${it.id}" ${full?'disabled':''}>${label}</button></div>`;}).join('');
   const need={gang:0,oct:0,panel:0,w14:0,w12:0};S.ticket.forEach(ui=>UNITS[ui].boxes.forEach(b=>{if(b.done)return;const [bi,wi]=NEED[b.kind];if(!b.mounted)need[bi]++;if(wi&&b.runIdx===0)need[wi]++;}));S.ticket.forEach(ui=>{const st=UNITS[ui].stash||{};for(const k in need)need[k]=Math.max(0,need[k]-(st[k]||0));});
-  $('supplyNeed').textContent=`Your ticket still needs: ${need.gang} single gang nail-ons, ${need.oct} ceiling boxes, ${need.panel} load center${need.panel===1?'':'s'}, ${need.w14} runs of 14/2, ${need.w12} runs of 12/2.`;}
+  $('supplyNeed').textContent=`Your ticket still needs: ${need.gang} single gang nail-ons, ${need.oct} ceiling boxes, ${need.panel} panel${need.panel===1?'':'s'}, ${need.w14} runs of 14/2, ${need.w12} runs of 12/2.`;}
 $('supplyItems').addEventListener('click',e=>{const b=e.target.closest('button[data-id]');if(!b)return;const it=SUPPLY.find(x=>x.id===b.dataset.id);
   if(S.inv[it.id]>=capOf(it.id))return;Object.keys(S.inv).forEach(k=>{if(k!==it.id)S.inv[k]=0;});S.inv[it.id]=capOf(it.id);tone(520,.06,'triangle',.04);renderSupply();});
 $('btnPutBack').addEventListener('click',()=>{Object.keys(S.inv).forEach(k=>S.inv[k]=0);renderSupply();});
-function carryShort(){const c=carrying();if(!c)return '';const n=S.inv[c];return {gang:`${n} boxes`,oct:`${n} ceiling boxes`,panel:'load center',w14:`14/2 ×${n}`,w12:`12/2 ×${n}`}[c];}
+function carryShort(){const c=carrying();if(!c)return '';const n=S.inv[c];return {gang:`${n} boxes`,oct:`${n} ceiling boxes`,panel:'panel',w14:`14/2 ×${n}`,w12:`12/2 ×${n}`}[c];}
 function carryText(){const c=carrying();if(!c)return 'nothing';const n=S.inv[c];
-  return {gang:`${n} single gang nail-on${n===1?'':'s'}`,oct:`${n} ceiling box${n===1?'':'es'}`,panel:'a load center',w14:`14/2 reel (${n} run${n===1?'':'s'} left)`,w12:`12/2 reel (${n} run${n===1?'':'s'} left)`}[c];}
+  return {gang:`${n} single gang nail-on${n===1?'':'s'}`,oct:`${n} ceiling box${n===1?'':'es'}`,panel:'a breaker panel',w14:`14/2 reel (${n} run${n===1?'':'s'} left)`,w12:`12/2 reel (${n} run${n===1?'':'s'} left)`}[c];}
 $('btnSupplyClose').addEventListener('click',()=>{$('supply').hidden=true;S.mode='play';lock();});
 $('btnShopClose').addEventListener('click',()=>{$('shop').hidden=true;S.mode='play';lock();});
 $('btnHome').addEventListener('click',goHome);$('btnLows').addEventListener('click',goStore);
@@ -2542,8 +2542,9 @@ function setQuality(q){Q=q;try{localStorage.setItem(QKEY,q);}catch(e){}applyQual
 document.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>setQuality(b.dataset.q)));
 
 /* ================= PATCH NOTES ================= */
-const GAME_VERSION='3.3';
+const GAME_VERSION='3.4';
 const PATCHES=[
+  {v:'3.4',title:'Panels',items:['Load centers are now just called panels / breaker panels']},
   {v:'3.3',title:'Landscape only',items:['On phones the game only plays sideways now','Hold your phone upright and the game pauses with a turn-your-phone screen','On Android the screen locks sideways once you tap in']},
   {v:'3.2',title:'Carton + training fixes',items:['Carton flaps are attached to the box now, hinged off the top edges on all four sides','Trailer shelves use the same full cartons','Training: Jake starts right next to you, talks, then walks you to the trailer','If you fall behind, Jake stops and waits for you']},
   {v:'3.1',title:'Grey nail-ons + Jake\'s pay rant',items:['Boxes now come as cartons packed full of grey single gang nail-ons, standing side by side','Everything that said blue boxes now says single gang nail-ons','Jake is technically just an apprentice. Five years with the company and he will tell you all about how he should be on journeyman pay']},
